@@ -2,6 +2,8 @@
 #define ROOM_H
 #pragma once
 
+#include <string>
+
 class Room
 {
 public:

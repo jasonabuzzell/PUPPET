@@ -64,7 +64,7 @@ int Character::move(XYZ xyz, string room) {
         cout << "Moving...\n";
         vector<int> a = xyz.listRooms()[*location]["coordinates"];
         vector<int> b = xyz.listRooms()[room]["coordinates"];
-        int c = static_cast<int>(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2) / 10);
+        int c = round((pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)) / 10);
         *location = room;
         return c;
     }

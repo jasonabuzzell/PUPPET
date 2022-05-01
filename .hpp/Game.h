@@ -2,8 +2,9 @@
 #define GAME_H
 #pragma once
 
-#include "../.hpp/XYZ.h"
-#include "../.hpp/Character.h"
+#include "json.hpp"
+#include "XYZ.h"
+#include "Character.h"
 #include <string>
 
 class Game
@@ -13,6 +14,8 @@ class Game
         void getInput();
         int *getTimer();
         void exitCheck();
+        void toolsMenu(nlohmann::json catalog);
+        void weaponsMenu(nlohmann::json catalog);
         void menu();
         void options();
         void moving(XYZ xyz, Character zero);
@@ -22,8 +25,10 @@ class Game
 
     private:
         std::string input;
+        std::string *inputType;
+        std::string *strChoice;
+        int *enumChoice;
         bool *exit;
-        int *choice;
         int *time;
         int currentFile;
         int resume;
