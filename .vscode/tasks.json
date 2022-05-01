@@ -11,8 +11,7 @@
 				"${workspaceFolder}\\.cpp\\*.cpp",
 				"-o",
 				"${workspaceFolder}\\puppet.exe",
-				"-static-libgcc", 
-				"-static-libstdc++"
+				"-static"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
