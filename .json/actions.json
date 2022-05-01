@@ -1,0 +1,9 @@
+{
+    "Move" : 0,
+    "Look" : 1,
+    "Use" : 2,
+    "Take" : 3,
+    "Drop": 4,
+    "Options": 5,
+    "Exit" : 6
+}

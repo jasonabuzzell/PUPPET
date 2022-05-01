@@ -1,0 +1,206 @@
+{
+    "0": {
+        "start_zero": {
+            "connect": [
+                "passage_one"
+            ],
+            "coordinates": [
+                -80, 0
+            ]
+        },
+        "passage_one": {
+            "connect": [
+                "start_zero",
+                "hall_one"
+            ],
+            "coordinates": [
+                -65, 0
+            ]
+        },
+        "hall_one": {
+            "connect": [
+                "passage_one",
+                "passage_two"
+            ],
+            "coordinates": [
+                -50, 0
+            ]
+        },
+        "passage_two": {
+            "connect": [
+                "hall_one",
+                "hall_two",
+                "hall_four"
+            ],
+            "coordinates": [
+                -40, 0
+            ]
+        },
+        "hall_two": {
+            "connect": [
+                "passage_two",
+                "start_one",
+                "stage"
+            ],
+            "coordinates": [
+                -30, 0
+            ]
+        },
+        "start_one": {
+            "connect": [
+                "hall_two",
+                "terminal"
+            ],
+            "coordinates": [
+                -15, 0
+            ]
+        },
+        "terminal": {
+            "connect": [
+                "start_one"
+            ],
+            "coordinates": [
+                0, 0
+            ]
+        },
+        "stage": {
+            "connect": [
+                "hall_two",
+                "passage_four"
+            ],
+            "coordinates": [
+                -30, 20
+            ]
+        },
+        "passage_four": {
+            "connect": [
+                "pool",
+                "stage"
+            ],
+            "coordinates": [
+                -45, 15
+            ]
+        },
+        "pool": {
+            "connect": [
+                "hall_three",
+                "passage_four"
+            ],
+            "coordinates": [
+                -70, 10
+            ]
+        },
+        "half_three": {
+            "connect": [
+                "pool",
+                "passage_five"
+            ],
+            "coordinates": [
+                -55, 40
+            ]
+        },
+        "passage_five": {
+            "connect": [
+                "hall_three"
+            ],
+            "coordinates": [
+                -45, 40
+            ]
+        },
+        "hall_four": {
+            "connect": [
+                "passage_two",
+                "breaker",
+                "passage_three"
+            ],
+            "coordinates": [
+                -40, -10
+            ]
+        },
+        "breaker": {
+            "connect": [
+                "hall_four"
+            ],
+            "coordinates": [
+                -20, -10
+            ]
+        },
+        "passage_three": {
+            "connect": [
+                "hall_four",
+                "storage_one",
+                "hall_five"
+            ],
+            "coordinates": [
+                -55, -15
+            ]
+        },
+        "storage_one": {
+            "connect": [
+                "passage_three"
+            ],
+            "coordinates": [
+                -70, -20
+            ]
+        },
+        "hall_five": {
+            "connect": [
+                "passage_three",
+                "storage_two",
+                "passage_six",
+                "passage_seven"
+            ],
+            "coordinates": [
+                -50, -30
+            ]
+        },
+        "storage_two": {
+            "connect": [
+                "hall_five"
+            ],
+            "coordinates": [
+                -40, -30
+            ]
+        },
+        "passage_six": {
+            "connect": [
+                "hall_five",
+                "hospital",
+                "start_two"
+            ],
+            "coordinates": [
+                -30, -40
+            ]
+        },
+        "hospital": {
+            "connect": [
+                "passage_six",
+                "passage_seven"
+            ],
+            "coordinates": [
+                -45, -40
+            ]
+        },
+        "passage_seven": {
+            "connect": [
+                "hall_five",
+                "hospital"
+            ],
+            "coordinates": [
+                -60, -40
+            ]
+        },
+        "start_two": {
+            "connect": [
+                "passage_six"
+            ],
+            "coordinates": [
+                -20, -50
+            ]
+        }
+    },
+    "1": {},
+    "2": {},
+    "3": {},
+    "4": {}
+}
