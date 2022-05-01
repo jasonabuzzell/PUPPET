@@ -1,6 +1,7 @@
 #include "../.hpp/Character.h"
 #include "../.hpp/XYZ.h"
 #include "../.hpp/json.hpp"
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -10,20 +11,27 @@ using namespace nlohmann;
 
 Character::Character(string place)
     : location(new string(place)),
+      timer(new int(0)),
       moveFlag(true),
       lookFlag(true),
-      ableFlag(false) 
-{}
+      ableFlag(false) {}
 
 string Character::getLocation() {
     return *location;
 }
 
+int *Character::getTimer() {
+    return timer;
+}
+
 vector<string> Character::possibleActions() {
     vector<string> actions;
 
-    if (moveFlag) actions.push_back("Move");
-    if (ableFlag) actions.push_back("Take");
+    if (moveFlag)
+        actions.push_back("Move");
+    if (ableFlag)
+        actions.push_back("Take");
+    actions.push_back("Invest");
 
     return actions;
 }
@@ -35,8 +43,8 @@ void Character::printActions(XYZ xyz, vector<string> actions) {
     cout << "Enter: ";
 }
 
-vector <string> Character::possibleMoves(XYZ xyz) {
-    vector <string> rooms = xyz.listRooms()[*location]["connect"];
+vector<string> Character::possibleMoves(XYZ xyz) {
+    vector<string> rooms = xyz.listRooms()[*location]["connect"];
     rooms.push_back("Cancel");
     return rooms;
 }
@@ -49,26 +57,36 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
     cout << "Enter: ";
 }
 
-void Character::move(string room) {
+int Character::move(XYZ xyz, string room) {
     if (room == "Cancel") {
-        return;
+        return 0;
     } else {
         cout << "Moving...\n";
+        vector<int> a = xyz.listRooms()[*location]["coordinates"];
+        vector<int> b = xyz.listRooms()[room]["coordinates"];
+        int c = static_cast<int>(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2) / 10);
         *location = room;
+        return c;
     }
 }
 
-// Add in functionality for Character with each room using 
+// Add in functionality for Character with each room using
 // Room class. (e.g. "terminal" gives action to change
 // XYZ config.)
 
 vector<string> User::possibleActions() {
     vector<string> actions;
 
-    if (moveFlag) actions.push_back("Move");
-    if (lookFlag) actions.push_back("Look");
-    if (ableFlag) actions.push_back("Take");
+    if (moveFlag)
+        actions.push_back("Move");
+    if (lookFlag)
+        actions.push_back("Look");
+    if (ableFlag)
+        actions.push_back("Take");
+    actions.push_back("Invest");
+    actions.push_back("Automate");
     actions.push_back("Options");
+    actions.push_back("Save");
     actions.push_back("Exit");
 
     return actions;
@@ -77,7 +95,7 @@ vector<string> User::possibleActions() {
 void User::look(XYZ xyz) {
     vector<string> connect = xyz.listRooms()[*location]["connect"];
     cout << "\nLooking...\nRooms:\n";
-    for (auto s: connect) {
+    for (auto s : connect) {
         cout << s << "\n";
     }
     cout << "\n";

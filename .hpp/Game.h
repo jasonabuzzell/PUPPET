@@ -11,10 +11,12 @@ class Game
     public:
         Game();
         void getInput();
+        int *getTimer();
         void exitCheck();
         void menu();
         void options();
-        void moving(XYZ xyz, User zero);
+        void moving(XYZ xyz, Character zero);
+        void investing(Character zero);
         void play();
         void main();
 
@@ -22,6 +24,7 @@ class Game
         std::string input;
         bool *exit;
         int *choice;
+        int *time;
         int currentFile;
         int resume;
 };

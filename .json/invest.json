@@ -1,0 +1,24 @@
+{
+    "Tools" : {
+        "Cameras": {
+            "Hall_one": 10,
+            "Stage": 20,
+            "Passage_one": 10
+        },
+        "Phone": 50,
+        "Radar": 100,
+        "Sonar": 100
+    },
+    "Weapons" : {
+        "Handguns": {
+            "M1911A": 50,
+            "Colt": 40,
+            "Smith & Wesson": 40 
+        },
+        "Rifles": {
+            "Mosin Nagant": 250,
+            "Garand": 200,
+            "AK-47": 500
+        }
+    }
+}

@@ -11,14 +11,16 @@ class Character
     public:
         Character(std::string place);
         std::string getLocation();
+        int *getTimer();
         virtual std::vector<std::string> possibleActions();
         void printActions(XYZ xyz, std::vector<std::string> actions);
         std::vector<std::string> allActions(XYZ xyz);
         std::vector<std::string> possibleMoves(XYZ xyz);
         void printMoves(XYZ xyz, std::vector<std::string> moves);
-        void move(std::string room);
+        int move(XYZ xyz, std::string room);
     protected:
         std::string* location;
+        int *timer;
         bool moveFlag;
         bool lookFlag;
         bool ableFlag;

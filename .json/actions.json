@@ -4,6 +4,9 @@
     "Use" : 2,
     "Take" : 3,
     "Drop": 4,
-    "Options": 5,
-    "Exit" : 6
+    "Invest": 5,
+    "Automate": 6,
+    "Options": 7,
+    "Save": 8,
+    "Exit" : 9
 }
