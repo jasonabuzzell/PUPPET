@@ -20,28 +20,6 @@
 				"$gcc"
 			],
 			"group": "build",
-			"detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe",
-			"dependsOn": ["setup"]
-		},
-		{
-			"type": "cppbuild",
-			"label": "setup",
-			"command": "C:\\msys64\\mingw64\\bin\\g++.exe",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${workspaceFolder}\\.cpp\\.setup\\setup.cpp",
-				"-o",
-				"${workspaceFolder}\\setup.exe",
-				"-static"
-			],
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
 			"detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
 		}
 	]

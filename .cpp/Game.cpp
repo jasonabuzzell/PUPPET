@@ -442,12 +442,12 @@ void Game::main() {
     Game::menu();
     if (*exit)
         return;
+    
+    // Fix nlohmann issues.
     // Make enemies.
-    // Finish versatility.
     // Make save state.
     // Figure out investing screen.
     // Figure out incentives (e.g. exploring a room).
-
     Game::play();
 
     return;
