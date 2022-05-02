@@ -6,7 +6,8 @@
     "Drop": 4,
     "Invest": 5,
     "Automate": 6,
-    "Options": 7,
-    "Save": 8,
-    "Exit" : 9
+    "Wait": 7,
+    "Options": 8,
+    "Save": 9,
+    "Exit" : 10
 }

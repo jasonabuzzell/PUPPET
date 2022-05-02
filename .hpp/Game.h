@@ -11,6 +11,7 @@ class Game
 {
     public:
         Game();
+        void choiceReset();
         void getInput();
         int *getTimer();
         void exitCheck();

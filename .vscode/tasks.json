@@ -11,9 +11,7 @@
 				"${workspaceFolder}\\.cpp\\*.cpp",
 				"-o",
 				"${workspaceFolder}\\puppet.exe",
-				"-static-libgcc",
-				"-static-libstdc++",
-				"-l:libwinpthread.a"
+				"-static"
 			],
 			"options": {
 				"cwd": "${fileDirname}"
@@ -35,9 +33,7 @@
 				"${workspaceFolder}\\.cpp\\.setup\\setup.cpp",
 				"-o",
 				"${workspaceFolder}\\setup.exe",
-				"-static-libgcc",
-				"-static-libstdc++",
-				"-l:libwinpthread.a"
+				"-static"
 			],
 			"options": {
 				"cwd": "${fileDirname}"

@@ -11,6 +11,13 @@
 using namespace std;
 using namespace nlohmann;
 
+string decap(string s) {
+    for (int i = 0; i < s.length(); i++) {
+        s[i] = tolower(s[i]);
+    }
+    return s; 
+} 
+
 Game::Game()
     : currentFile(0),
       time(new int(0)),
@@ -20,7 +27,7 @@ Game::Game()
       exit(new bool(false))
 {
     cout << "LOADING: [puppet] ... \n";
-    cout << "----------------------------\n";
+    cout << "----------------------------\n\n";
     
     ifstream i("../.json/options.json");
     json options;
@@ -32,14 +39,22 @@ Game::Game()
         *inputType = "String";
     }
 
+    cout << "Input Type: " << *inputType << "\n";
+
     i.close();
+}
+
+void Game::choiceReset() {
+    *enumChoice = -1;
+    *strChoice = "";
 }
 
 void Game::getInput() {
     while (!*exit) {
-        cin >> input;
+        getline(cin, input);
         if (*inputType == "Enumeration") { 
             try {
+                if (input == "") throw 1;
                 *enumChoice = stoi(input); // will truncate floats.
                 if (*enumChoice < 0)
                     throw 1;
@@ -48,21 +63,19 @@ void Game::getInput() {
                     << "Please put in a non-negative integer (e.g. 1)."
                     << "\n\nEnter: ";
             }
+        } else if (*inputType == "String") {
+            *strChoice = decap(input);
         }
     }
 }
 
-int printOptions(json options) {
+void printOptions(json options) {
     int count = 0;
     for (auto i : options.items()) {
         cout << count << ". " << i.key() << ": " << i.value() << "\n";
         count++;
     }
-
-    const int last = ++count;
-    cout << last << ". Back\nEnter: ";
-
-    return last;
+    cout << count << ". Back\nEnter: ";
 }
 
 void Game::options() {
@@ -70,15 +83,15 @@ void Game::options() {
     ifstream i("../.json/options.json");
     json options;
     i >> options;
+    i.close();
+    ofstream o("../.json/options.json");
+    printOptions(options);
 
-    int last = printOptions(options);
-
-    *enumChoice = -1;
+    Game::choiceReset();
     while (true) {
-        if (*inputType == "Enumeration" && *enumChoice > -1) {
-            if (*enumChoice == last) break; // Back
+        if (*enumChoice > -1 && *inputType == "Enumeration") {
             switch(*enumChoice) {
-                case 0: { // inputType
+                case 0: {// inputType
                     *enumChoice = -1;
                     cout << "\n0. Enumeration\n1. String\n" <<
                     "2. Cancel\nEnter: ";
@@ -101,7 +114,7 @@ void Game::options() {
                                     break;
                                 default:
                                     cout << "Not a valid choice! " <<
-                                    "Please pick either 0 or 1.\n";
+                                    "Please pick either 0 or 1.\n\nEnter: ";
                             }
                             *enumChoice = -1;
                         }
@@ -110,35 +123,69 @@ void Game::options() {
                     printOptions(options);
                     break;
                 }
+                case 1: // Back
+                    *enumChoice = -1;
+                    o << options;
+                    o.close();
+                    return;
                 default:
                     cout << "Not a valid choice!" <<
-                    "Please pick between 0 and " <<
-                    last << ".\n";
+                    "Please pick between 0 and 1.\n\nEnter: ";
             }
-        } else if (*inputType == "String" && *strChoice != "") {
-            // By using *strChoice != "", inputs like "0" are allowed.
+        } else if (*strChoice != "" && *inputType == "String") {
+            if (*strChoice == "input type") {
+                *strChoice = "";
+                cout << "\n0. Enumeration\n1. String\n" <<
+                "2. Cancel\nEnter: ";
+                bool flag = true;
+                while (flag) {
+                    if (*strChoice != "") {
+                        if (*strChoice == "enumeration") {
+                            *inputType = "Enumeration";
+                            options["Input Type"] = "Enumeration";
+                            flag = false;
+                        } else if (*strChoice == "string") {
+                            *inputType = "String";
+                            options["Input Type"] = "String";
+                            flag = false;
+                        } else if (*strChoice == "cancel") {
+                            flag = false;
+                        } else {
+                            cout << "Not a valid choice! " <<
+                            "Please pick either 0 or 1.\n\nEnter: ";
+                        }
+                        *strChoice = "";
+                    }
+                }
+                cout << "\n";
+                printOptions(options);
+            } else if (*strChoice == "back") {
+                *strChoice = "";
+                o << options;
+                o.close();
+                return;
+            } else {
+                cout << "Not a valid choice! " <<
+                "Please pick an option (e.g. Enumeration)" << 
+                "\n\nEnter: ";
+                *strChoice = "";                                 
+            }
         }
     }
-
-    i.close();
-    ofstream o("../.json/options.json");
-    o << options;
-
-    return;
 }
 
 void Game::menu() {
     string menuStr = "\n0. New\n1. Resume\n2. Options\n3. Exit\nEnter: ";
     cout << menuStr;
 
-    *enumChoice = -1;
+    Game::choiceReset();
     while (true) {
-        if (*inputType == "Enumeration" && *enumChoice > -1) {
+        if (*enumChoice > -1 && *inputType == "Enumeration") {
             switch (*enumChoice) {
-            case 0:
+            case 0: // New
                 resume = 0;
                 return;
-            case 1:
+            case 1: // Resume
                 if (currentFile) {
                     resume = 1;
                     return;
@@ -147,19 +194,44 @@ void Game::menu() {
                     cout << menuStr;
                     break;
                 }
-            case 2:
+            case 2: // Options
                 Game::options();
                 cout << menuStr;
                 break;
-            case 3:
+            case 3: // Exit
                 *exit = true;
                 return;
             default:
-                cout << "Input not in range (e.g. 0-3)!\n\n";
+                cout << "Input not in range (e.g. 0-3)!\n";
                 cout << menuStr;
                 break;
             }
             *enumChoice = -1;
+        } else if (*strChoice != "" && *inputType == "String") {
+            if (*strChoice == "new") {
+                resume = 0;
+                return;
+            } else if (*strChoice == "resume") {
+                if (currentFile) {
+                    resume = 1;
+                    return;
+                } else {
+                    cout << "\nNo game save!\n";
+                    cout << menuStr;
+                    break;
+                }
+            } else if (*strChoice == "options") {
+                Game::options();
+                cout << menuStr;
+            } else if (*strChoice == "exit") {
+                *exit = true;
+                return;
+            } else {
+                cout << "Not a valid choice! " <<
+                "Please pick an option (e.g. Enumeration)\n\n";
+                cout << menuStr;
+            }
+            *strChoice = "";
         }
     }
 
@@ -170,11 +242,14 @@ void Game::moving(XYZ xyz, Character zero) {
     vector<string> moves = zero.possibleMoves(xyz);
     zero.printMoves(xyz, moves);
 
-    *enumChoice = -1;
+    Game::choiceReset();
     while (true) {
-        if (*inputType == "Enumeration" && *enumChoice > -1) {
+        if (*enumChoice > -1 && *inputType == "Enumeration") {
+            cout << "0\n";
             if (*enumChoice < moves.size()) {
+                cout << "1\n";
                 int t = zero.move(xyz, moves[*enumChoice]);
+                cout << "2\n";
                 *time += t;
                 *zero.getTimer() += t;
                 *enumChoice = -1;
@@ -184,6 +259,23 @@ void Game::moving(XYZ xyz, Character zero) {
                 zero.printMoves(xyz, moves);
             }
             *enumChoice = -1;
+        } else if (*strChoice != "" && *inputType == "String") {
+            vector<string> decapMoves = {};
+            for (auto s: moves) {
+                decapMoves.push_back((s));
+            }
+            if (find(decapMoves.begin(), decapMoves.end(), *strChoice) 
+            != decapMoves.end()) {
+                int t = zero.move(xyz, *strChoice);
+                *time += t;
+                *zero.getTimer() += t;
+                *strChoice = -1;
+                return;
+            } else {
+                cout << "Not a valid move!\n\n";
+                zero.printMoves(xyz, moves);
+            }
+            *strChoice = -1;
         }
     }
 }
@@ -211,7 +303,7 @@ void Game::investing(Character zero) {
     cout << ++count << ". Back\nEnter: ";
     
     // Fix this selection menu (might want to look into recursion).
-    *enumChoice = -1;
+    Game::choiceReset();
     while (true) {
         if (*inputType == "Enumeration" && *enumChoice > -1) {
             switch(*enumChoice) {
@@ -225,6 +317,7 @@ void Game::investing(Character zero) {
                     return;
                 default: 
                     cout << "Not a valid move!\n\n";
+                    count = 0;
                     for (auto i: catalog.items()) {
                         cout << count << ". " << i.key() << "\n";
                     }
@@ -249,11 +342,11 @@ void Game::play() {
     json univ_actions;
     i >> univ_actions;
 
-    *enumChoice = -1;
+    Game::choiceReset();
     while (true) {
         if (!actions.size()) {
             // No possible movements.
-        } else if (*inputType == "Enumeration" && *enumChoice > -1) {
+        } else if (*enumChoice > -1 && *inputType == "Enumeration") {
             if (*enumChoice < actions.size()) {
                 int univ_choice = univ_actions[actions[*enumChoice]];
                 *enumChoice = -1;
@@ -282,16 +375,19 @@ void Game::play() {
                     Game::investing(zero);
                     cout << "\n";
                     break;
-                case 6: //Automate
+                case 6: // Automate
                     cout << "\n";
                     break;
-                case 7: // Options
+                case 7: // Wait
+                    cout << "\n";
+                    break;
+                case 8: // Options
                     Game::options();
                     break;
-                case 8: // Save
+                case 9: // Save
                     cout << "\n";
                     break;
-                case 9: // Exit (to menu/save or desktop)
+                case 10: // Exit (to menu/save or desktop)
                     *exit = true;
                     i.close();
                     return;
@@ -304,6 +400,40 @@ void Game::play() {
                 cout << "Not a valid choice! "
                      << "Pick something between 0 and " << actions.size() - 1 << ".\n";
             }
+        } else if (*strChoice != "" && *inputType == "String") {
+            if (*strChoice == "move") {
+                Game::moving(xyz, zero);
+                cout << "\nTime: " << *time;
+                cout << "\nLocation: " << zero.getLocation() << "\n\n";
+            } else if (*strChoice == "look") {
+                zero.look(xyz);
+            } else if (*strChoice == "use") {
+                cout << "\n";
+            } else if (*strChoice == "take") {
+                // Make a .json file for weapons/tools with parameters
+                // for starting position and current position,
+                // (e.g. start = "hall_one", current = "zero_inventory")
+                cout << "\n";
+            } else if (*strChoice == "drop") {
+                cout << "\n"; // Don't remove these, they will become part of the function
+            } else if (*strChoice == "invest") {
+                Game::investing(zero);
+                cout << "\n";
+            } else if (*strChoice == "automate") {
+                cout << "\n";
+            } else if (*strChoice == "wait") {
+                cout << "\n";
+            } else if (*strChoice == "options") {
+                Game::options();
+            } else if (*strChoice == "save") {
+                cout << "\n";
+            } else if (*strChoice == "exit") {
+                *exit = true;
+                i.close();
+                return;
+            } else {
+                cout << "Could not find the universal move!\n";
+            }
         }
     }
 }
@@ -312,6 +442,12 @@ void Game::main() {
     Game::menu();
     if (*exit)
         return;
+    // Make enemies.
+    // Finish versatility.
+    // Make save state.
+    // Figure out investing screen.
+    // Figure out incentives (e.g. exploring a room).
+
     Game::play();
 
     return;
