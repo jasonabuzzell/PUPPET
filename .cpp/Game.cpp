@@ -29,8 +29,9 @@ Game::Game()
     cout << "LOADING: [puppet] ... \n";
     cout << "----------------------------\n\n";
     
-    ifstream ifs("../.json/options.json");
-    json options = json::parse(ifs); // Causing problems!
+    ifstream ifs(".json/options.json");
+    json options = json::parse(ifs);
+    ifs.close();
 
     if (options["Input Type"] == "Enumeration") {
         *inputType = "Enumeration";
@@ -39,8 +40,6 @@ Game::Game()
     }
 
     cout << "Input Type: " << *inputType << "\n";
-
-    ifs.close();
 }
 
 void Game::choiceReset() {
@@ -77,12 +76,17 @@ void printOptions(json options) {
     cout << count << ". Back\nEnter: ";
 }
 
+void updateOptions(json options) {
+    ofstream ofs(".json/options.json");
+    ofs << options;
+    ofs.close();
+}
+
 void Game::options() {
     cout << "\nOptions.\n\n";
-    ifstream ifs("../.json/options.json");
+    ifstream ifs(".json/options.json");
     json options = json::parse(ifs);
     ifs.close();
-    ofstream o("../.json/options.json");
     printOptions(options);
 
     Game::choiceReset();
@@ -123,8 +127,7 @@ void Game::options() {
                 }
                 case 1: // Back
                     *enumChoice = -1;
-                    o << options;
-                    o.close();
+                    updateOptions(options);
                     return;
                 default:
                     cout << "Not a valid choice!" <<
@@ -159,8 +162,7 @@ void Game::options() {
                 printOptions(options);
             } else if (*strChoice == "back") {
                 *strChoice = "";
-                o << options;
-                o.close();
+                updateOptions(options);
                 return;
             } else {
                 cout << "Not a valid choice! " <<
@@ -288,7 +290,7 @@ void Game::weaponsMenu(json catalog) {
 
 void Game::investing(Character zero) {
     cout << "\n\nInvest:\n" << "Timer: " << *zero.getTimer() << "\n\n";
-    ifstream ifs("../.json/invest.json");
+    ifstream ifs(".json/invest.json");
     json catalog = json::parse(ifs);
     ifs.close();
 
@@ -335,7 +337,7 @@ void Game::play() {
     cout << "\nLocation: " << zero.getLocation() << "\n\n";
     vector<string> actions = zero.possibleActions();
     zero.printActions(xyz, actions);
-    ifstream ifs("../.json/actions.json");
+    ifstream ifs(".json/actions.json");
     json univ_actions = json::parse(ifs);
     ifs.close();
 

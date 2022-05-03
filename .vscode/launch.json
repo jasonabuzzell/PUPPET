@@ -11,18 +11,7 @@
             "program": "${workspaceFolder}/puppet.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "console": "externalTerminal"
-        },
-        {
-            "name": "(Windows) Launch: setup",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/setup.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal"
         }
