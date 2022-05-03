@@ -1,8 +1,8 @@
+#include "../.hpp/json.hpp"
 #include "../.hpp/Game.h"
 #include "../.hpp/Character.h"
 #include "../.hpp/Room.h"
 #include "../.hpp/XYZ.h"
-#include "../.hpp/json.hpp"
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -29,9 +29,8 @@ Game::Game()
     cout << "LOADING: [puppet] ... \n";
     cout << "----------------------------\n\n";
     
-    ifstream i("../.json/options.json");
-    json options;
-    i >> options;
+    ifstream ifs("../.json/options.json");
+    json options = json::parse(ifs); // Causing problems!
 
     if (options["Input Type"] == "Enumeration") {
         *inputType = "Enumeration";
@@ -41,7 +40,7 @@ Game::Game()
 
     cout << "Input Type: " << *inputType << "\n";
 
-    i.close();
+    ifs.close();
 }
 
 void Game::choiceReset() {
@@ -80,10 +79,9 @@ void printOptions(json options) {
 
 void Game::options() {
     cout << "\nOptions.\n\n";
-    ifstream i("../.json/options.json");
-    json options;
-    i >> options;
-    i.close();
+    ifstream ifs("../.json/options.json");
+    json options = json::parse(ifs);
+    ifs.close();
     ofstream o("../.json/options.json");
     printOptions(options);
 
@@ -290,9 +288,9 @@ void Game::weaponsMenu(json catalog) {
 
 void Game::investing(Character zero) {
     cout << "\n\nInvest:\n" << "Timer: " << *zero.getTimer() << "\n\n";
-    ifstream i("../.json/invest.json");
-    json catalog;
-    i >> catalog;
+    ifstream ifs("../.json/invest.json");
+    json catalog = json::parse(ifs);
+    ifs.close();
 
     int count = 0;
     for (auto i: catalog.items()) {
@@ -326,21 +324,20 @@ void Game::investing(Character zero) {
         }
     }
 
-    i.close();
     return;
 }
 
 void Game::play() {
     XYZ xyz;
-    User zero("start_zero");
+    User zero("Start Zero");
 
     cout << "\nTime: " << *time;
     cout << "\nLocation: " << zero.getLocation() << "\n\n";
     vector<string> actions = zero.possibleActions();
     zero.printActions(xyz, actions);
-    ifstream i("../.json/actions.json");
-    json univ_actions;
-    i >> univ_actions;
+    ifstream ifs("../.json/actions.json");
+    json univ_actions = json::parse(ifs);
+    ifs.close();
 
     Game::choiceReset();
     while (true) {
@@ -389,7 +386,6 @@ void Game::play() {
                     break;
                 case 10: // Exit (to menu/save or desktop)
                     *exit = true;
-                    i.close();
                     return;
                 default:
                     cout << "Could not find the universal move!\n";
@@ -429,7 +425,6 @@ void Game::play() {
                 cout << "\n";
             } else if (*strChoice == "exit") {
                 *exit = true;
-                i.close();
                 return;
             } else {
                 cout << "Could not find the universal move!\n";

@@ -27,11 +27,14 @@ int *Character::getTimer() {
 vector<string> Character::possibleActions() {
     vector<string> actions;
 
-    if (moveFlag)
-        actions.push_back("Move");
-    if (ableFlag)
+    if (moveFlag) actions.push_back("Move");
+    if (ableFlag) {
+        actions.push_back("Use");
         actions.push_back("Take");
+        actions.push_back("Drop");
+    }
     actions.push_back("Invest");
+    actions.push_back("Wait");
 
     return actions;
 }
@@ -81,10 +84,15 @@ vector<string> User::possibleActions() {
         actions.push_back("Move");
     if (lookFlag)
         actions.push_back("Look");
-    if (ableFlag)
+    if (ableFlag) {
+        // Add in items requisites.
+        actions.push_back("Use");
         actions.push_back("Take");
+        actions.push_back("Drop");
+    }
     actions.push_back("Invest");
     actions.push_back("Automate");
+    actions.push_back("Wait");
     actions.push_back("Options");
     actions.push_back("Save");
     actions.push_back("Exit");

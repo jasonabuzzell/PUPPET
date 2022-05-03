@@ -17,8 +17,7 @@ XYZ::XYZ()
 }
 
 json XYZ::listRooms() {
-    ifstream i("../.json/rooms.json");
-    json rooms;
-    i >> rooms;
+    ifstream ifs("../.json/rooms.json");
+    json rooms = json::parse(ifs);
     return rooms[to_string(config)];
 }
