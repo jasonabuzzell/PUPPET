@@ -2,12 +2,11 @@
     "Move" : 0,
     "Look" : 1,
     "Use" : 2,
-    "Take" : 3,
-    "Drop": 4,
-    "Invest": 5,
-    "Automate": 6,
-    "Wait": 7,
-    "Options": 8,
-    "Save": 9,
-    "Exit" : 10
+    "Invest": 3,
+    "Automate": 4,
+    "Wait": 5,
+    "Manual": 6,
+    "Options": 7,
+    "Save": 8,
+    "Exit" : 9
 }

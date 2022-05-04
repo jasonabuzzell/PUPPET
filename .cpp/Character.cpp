@@ -14,7 +14,7 @@ Character::Character(string place)
       timer(new int(0)),
       moveFlag(true),
       lookFlag(true),
-      ableFlag(false) {}
+      ableFlag(true) {}
 
 string Character::getLocation() {
     return *location;
@@ -28,11 +28,7 @@ vector<string> Character::possibleActions() {
     vector<string> actions;
 
     if (moveFlag) actions.push_back("Move");
-    if (ableFlag) {
-        actions.push_back("Use");
-        actions.push_back("Take");
-        actions.push_back("Drop");
-    }
+    if (ableFlag) actions.push_back("Use");
     actions.push_back("Invest");
     actions.push_back("Wait");
 
@@ -73,26 +69,16 @@ int Character::move(XYZ xyz, string room) {
     }
 }
 
-// Add in functionality for Character with each room using
-// Room class. (e.g. "terminal" gives action to change
-// XYZ config.)
-
 vector<string> User::possibleActions() {
     vector<string> actions;
 
-    if (moveFlag)
-        actions.push_back("Move");
-    if (lookFlag)
-        actions.push_back("Look");
-    if (ableFlag) {
-        // Add in items requisites.
-        actions.push_back("Use");
-        actions.push_back("Take");
-        actions.push_back("Drop");
-    }
+    if (moveFlag) actions.push_back("Move");
+    if (lookFlag) actions.push_back("Look");
+    if (ableFlag) actions.push_back("Use");
     actions.push_back("Invest");
     actions.push_back("Automate");
     actions.push_back("Wait");
+    actions.push_back("Manual");
     actions.push_back("Options");
     actions.push_back("Save");
     actions.push_back("Exit");
@@ -106,5 +92,4 @@ void User::look(XYZ xyz) {
     for (auto s : connect) {
         cout << s << "\n";
     }
-    cout << "\n";
 }

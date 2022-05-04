@@ -11,6 +11,7 @@
 				"${workspaceFolder}\\.cpp\\*.cpp",
 				"-o",
 				"${workspaceFolder}\\puppet.exe",
+				"${workspaceFolder}\\.res\\xyz.res",
 				"-static"
 			],
 			"options": {

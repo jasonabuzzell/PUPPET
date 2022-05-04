@@ -18,7 +18,9 @@ class Game
         void toolsMenu(nlohmann::json catalog);
         void weaponsMenu(nlohmann::json catalog);
         void menu();
+        nlohmann::json optionsInputType(nlohmann::json options);
         void options();
+        void manual();
         void moving(XYZ xyz, Character zero);
         void investing(Character zero);
         void play();
