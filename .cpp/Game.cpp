@@ -11,6 +11,9 @@
 using namespace std;
 using namespace nlohmann;
 
+// HELPER FUNCTIONS
+// -------------------------------------------------------
+
 string decap(string s) {
     for (int i = 0; i < s.length(); i++) {
         s[i] = tolower(s[i]);
@@ -26,6 +29,21 @@ int enumConvert(string s, vector<string> vec) {
         return distance(vec.begin(), itr);
     }
 }
+
+int printJson(json options) {
+    int count = 0;
+    for (auto i : options.items()) {
+        cout << count << ". " << i.key();
+        if (i.value().is_number()) cout << ": " << i.value();
+        cout << "\n";
+        count++;
+    }
+    cout << count << ". Back\nEnter: ";
+    return count;
+}
+
+// GAME CLASS
+// -----------------------------------------------------
 
 Game::Game()
     : currentFile(0),
@@ -49,6 +67,13 @@ Game::Game()
     }
 
     cout << "Input Type: " << *inputType << "\n";
+}
+
+void Game::convertInput(json allChoices) {
+    if (*strChoice != "") {
+        *enumChoice = enumConvert(*strChoice, allChoices);
+        *strChoice = "";
+    } 
 }
 
 void Game::choiceReset() {
@@ -80,15 +105,6 @@ void Game::getInput() {
     }
 }
 
-void printOptions(json options) {
-    int count = 0;
-    for (auto i : options.items()) {
-        cout << count << ". " << i.key() << ": " << i.value() << "\n";
-        count++;
-    }
-    cout << count << ". Back\nEnter: ";
-}
-
 void updateOptions(json options) {
     ofstream ofs(".json/options.json");
     ofs << options;
@@ -96,7 +112,7 @@ void updateOptions(json options) {
 }
 
 json Game::optionsInputType(json options) {
-    vector<string> allActions = { "enumeration", "string", "cancel" };
+    vector<string> allInputs = { "enumeration", "string", "cancel" };
 
     cout << "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
             "2. Cancel\nEnter: ";
@@ -104,10 +120,7 @@ json Game::optionsInputType(json options) {
     Game::choiceReset();
 
     while (true) {
-        if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, allActions);
-            *strChoice = "";
-        } 
+        Game::convertInput(allInputs);
         if (*enumChoice != -1) {
             switch (*enumChoice) {
             case 0: // Enumerator
@@ -132,28 +145,25 @@ json Game::optionsInputType(json options) {
 }
 
 void Game::options() {
-    vector<string> allActions = { "input type", "back" };
+    vector<string> allOptions = { "input type", "back" };
 
     cout << "\nOPTIONS:\n\n";
     ifstream ifs(".json/options.json");
     json options = json::parse(ifs);
     ifs.close();
-    printOptions(options);
+    printJson(options);
 
     Game::choiceReset();
 
     while (true) {
         // ENUMERATION OPTIONS
-        if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, allActions);
-            *strChoice = "";
-        } 
+        Game::convertInput(allOptions);
         if (*enumChoice != -1) {
             switch (*enumChoice) {
                 case 0: // inputType
                     options = Game::optionsInputType(options);
                     cout << "\n";
-                    printOptions(options);
+                    printJson(options);
                     break;
                 case 1: // Back
                     *enumChoice = -1;
@@ -179,10 +189,6 @@ void Game::moving(XYZ xyz, Character zero) {
 
     // ENUMERATION MOVING
     while (true) {
-        if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, moves);
-            *strChoice = "";
-        } 
         if (*enumChoice != -1) {
             if (*enumChoice < moves.size()) {
                 int t = zero.move(xyz, moves[*enumChoice]);
@@ -199,62 +205,86 @@ void Game::moving(XYZ xyz, Character zero) {
     }
 }
 
-void Game::toolsMenu(json catalog) {
+void Game::purchasing(Character zero, string key, int value) {
+    vector<string> allChoices = { "yes", "no", "cancel" };
+    int timer = *zero.getTimer();
+
+    cout << "Purchase " << key << " for " << value << "?\n\n"
+            "0. Yes\n1. No\nEnter: "; 
+    Game::choiceReset();
+    // Add in loan option.
+    while (true) {
+        Game::convertInput(allChoices);
+        if (*enumChoice != -1) {
+            switch (*enumChoice) {
+                case 0: // Yes
+                    if (timer >= value) { 
+                        cout << "Purchasing...\n";
+                        timer -= value;
+                        // Add in item drop.
+                    } else {
+                        cout << "Insufficient funds!\n\n";
+                    }
+                    *enumChoice = -1;
+                    break;
+                case 1: // No
+                    *enumChoice = -1;
+                    return;
+            }
+            cout << "Purchase " << key << " for " << value << "?\n\n"
+                    "0. Yes\n1. No\nEnter: "; 
+        }
+    }
 }
 
-void Game::weaponsMenu(json catalog) {
+void Game::investingInner(Character zero, json catalog) {
+    vector<string> allItems;
+    vector<string> capItems;
+
+    cout << "\nTimer: " << *zero.getTimer() << "\n\n";
+    for (auto i: catalog.items()) {
+        // Won't need to check for correct type due to logic.
+        allItems.push_back(decap(i.key()));
+        capItems.push_back(i.key()); // forced to due this to access.
+    }
+    int count = printJson(catalog); // O(2i): Double for-loop.
+    Game::choiceReset();
+    while (true) {
+        Game::convertInput(allItems);
+        if (*enumChoice != -1) {
+            if (*enumChoice > -1 && *enumChoice < allItems.size()) {
+                string key = capItems[*enumChoice];
+                auto value = catalog[key];
+                *enumChoice = -1;
+                if (value.is_number()) {
+                    Game::purchasing(zero, key, value);
+                } else {
+                    Game::investingInner(zero, value);
+                }
+            } else if (*enumChoice == count) { // Back
+                *enumChoice = -1;
+                return;                
+            } else {
+                *enumChoice = -1;
+                cout << "Not a valid choice!\n\n";
+            }
+            cout << "\nTimer: " << *zero.getTimer() << "\n\n";
+            count = printJson(catalog);
+        }
+    }
 }
 
 void Game::investing(Character zero) {
     vector<string> allActions = { "tools", "weapons", "back" };
 
-    cout << "\n\nINVEST:\n"
-         << "Timer: " << *zero.getTimer() << "\n\n";
+    cout << "\n\nINVEST:";
     
     ifstream ifs(".json/invest.json");
     json catalog = json::parse(ifs);
     ifs.close();
 
-    int count = 0;
-    for (auto i : catalog.items()) {
-        cout << count << ". " << i.key() << "\n";
-        count++;
-    }
-
-    cout << ++count << ". Back\nEnter: ";
-
     // Fix this selection menu (might want to look into recursion).
-    Game::choiceReset();
-    if (*inputType == "Enumeration") {
-        while (true) {
-            if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, allActions);
-            *strChoice = "";
-            } 
-            if (*enumChoice != -1) {
-                switch (*enumChoice) {
-                case 0: // Tools
-                    *enumChoice = -1;
-                    Game::toolsMenu(catalog);
-                    break;
-                case 1: // Weapons
-                    *enumChoice = -1;
-                    Game::weaponsMenu(catalog);
-                    break;
-                case 2: // Back
-                    *enumChoice = -1;
-                    return;
-                default:
-                    *enumChoice = -1;
-                    cout << "Not a valid move!\n\n";
-                    count = 0;
-                    for (auto i : catalog.items()) {
-                        cout << count << ". " << i.key() << "\n";
-                    }
-                }
-            }
-        }
-    }
+    Game::investingInner(zero, catalog);
 }
 
 void Game::play() {
@@ -277,10 +307,8 @@ void Game::play() {
     while (true) {
         if (!actions.size()) {
             // No possible movements.
-        } else if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, allActions);
-            *strChoice = "";
         }
+        Game::convertInput(allActions);
         if (*enumChoice != -1) {
             switch (*enumChoice) {
                 case 0: // Move
@@ -331,7 +359,7 @@ void Game::play() {
 }
 
 void Game::menu() {
-    vector<string> allActions = { "new", "resume", "options", 
+    vector<string> allChoices = { "new", "resume", "options", 
                                 "manual", "exit" };
     string menuStr = "\n0. New\n1. Resume\n2. Options\n3. Manual"
                      "\n4. Exit\nEnter: ";
@@ -340,10 +368,7 @@ void Game::menu() {
     Game::choiceReset();
 
     while (true) {
-        if (*strChoice != "") {
-            *enumChoice = enumConvert(*strChoice, allActions);
-            *strChoice = "";
-        } 
+        Game::convertInput(allChoices);
         if (*enumChoice != -1) {
             switch (*enumChoice) {
             case 0: // New
@@ -357,8 +382,7 @@ void Game::menu() {
                     return;
                 } else {
                     *enumChoice = -1;
-                    cout << "\nNo game save!\n"
-                         << menuStr;
+                    cout << "\nNo game save!\n" << menuStr;
                     break;
                 }
             case 2: // Options
@@ -390,6 +414,9 @@ void Game::main() {
         return;
 
     // Make enemies.
+    // Inject personality into each character (1 - Playful)
+    // for both Artivox and game preferences.
+    // Enemy AI.
     // Make save state.
     // Figure out investing screen.
     // Figure out incentives (e.g. exploring a room).

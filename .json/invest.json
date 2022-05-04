@@ -7,18 +7,19 @@
         },
         "Phone": 50,
         "Radar": 100,
-        "Sonar": 100
+        "Sonar": 100,
+        "Chaff Grenade": 100,
+        "Instant Disposal": 200
     },
     "Weapons" : {
-        "Handguns": {
-            "M1911A": 50,
-            "Colt": 40,
-            "Smith & Wesson": 40 
-        },
-        "Rifles": {
-            "Mosin Nagant": 250,
-            "Garand": 200,
-            "AK-47": 500
-        }
+        "Handgun": 100,
+        "Grenade": 200,
+        "Rifle": 400,
+        "Shotgun": 500,
+        "Exmit": 2000,
+        "Ferroform": 2000,
+        "The Thieves": 2000,
+        "Spider Cage": 2000,
+        "The Sinners": 2000
     }
 }

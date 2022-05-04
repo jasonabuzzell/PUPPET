@@ -11,12 +11,13 @@ class Game
 {
     public:
         Game();
+        void convertInput(nlohmann::json allChoices);
         void choiceReset();
         void getInput();
         int *getTimer();
         void exitCheck();
-        void toolsMenu(nlohmann::json catalog);
-        void weaponsMenu(nlohmann::json catalog);
+        void purchasing(Character zero, std::string key, int value);
+        void investingInner(Character zero, nlohmann::json catalog);
         void menu();
         nlohmann::json optionsInputType(nlohmann::json options);
         void options();
