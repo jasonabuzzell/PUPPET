@@ -9,17 +9,24 @@
 class Character
 {
     public:
-        Character(std::string place);
-        std::string getLocation();
+        Character(XYZ xyz, std::string place);
+        std::string *getLocation();
         int *getTimer();
+        float *getX();
+        float *getY();
         virtual std::vector<std::string> possibleActions();
         void printActions(XYZ xyz, std::vector<std::string> actions);
         std::vector<std::string> allActions(XYZ xyz);
-        std::vector<std::string> possibleMoves(XYZ xyz);
+        nlohmann::json possibleMoves(XYZ xyz);
         void printMoves(XYZ xyz, std::vector<std::string> moves);
-        int move(XYZ xyz, std::string room);
+        void move(std::string room, std::vector<int> coords, 
+                  int expTime, int *time);
+
     protected:
-        std::string* location;
+        std::string *location;
+        float *x;
+        float *y;
+        float *z;
         int *timer;
         bool moveFlag;
         bool lookFlag;

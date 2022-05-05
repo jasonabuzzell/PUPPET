@@ -14,16 +14,17 @@ class Game
         void convertInput(nlohmann::json allChoices);
         void choiceReset();
         void getInput();
+        int *getTime();
         int *getTimer();
         void exitCheck();
         void purchasing(Character zero, std::string key, int value);
-        void investingInner(Character zero, nlohmann::json catalog);
+        void buildingInner(Character zero, nlohmann::json catalog);
         void menu();
         nlohmann::json optionsInputType(nlohmann::json options);
         void options();
         void manual();
         void moving(XYZ xyz, Character zero);
-        void investing(Character zero);
+        void building(Character zero);
         void play();
         void main();
 

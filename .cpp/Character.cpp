@@ -5,19 +5,27 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <windows.h>
 
 using namespace std;
 using namespace nlohmann;
 
-Character::Character(string place)
+Character::Character(XYZ xyz, string place)
     : location(new string(place)),
+      x(new float(0.0)),
+      y(new float(0.0)),
+      z(new float(0.0)),
       timer(new int(0)),
       moveFlag(true),
       lookFlag(true),
-      ableFlag(true) {}
+      ableFlag(true) {
+    vector<int> coordinates = xyz.listRooms()[*location]["coordinates"];
+    *x = coordinates[0];
+    *y = coordinates[1];
+}
 
-string Character::getLocation() {
-    return *location;
+string *Character::getLocation() {
+    return location;
 }
 
 int *Character::getTimer() {
@@ -27,8 +35,10 @@ int *Character::getTimer() {
 vector<string> Character::possibleActions() {
     vector<string> actions;
 
-    if (moveFlag) actions.push_back("Move");
-    if (ableFlag) actions.push_back("Use");
+    if (moveFlag)
+        actions.push_back("Move");
+    if (ableFlag)
+        actions.push_back("Use");
     actions.push_back("Invest");
     actions.push_back("Wait");
 
@@ -42,10 +52,15 @@ void Character::printActions(XYZ xyz, vector<string> actions) {
     cout << "Enter: ";
 }
 
-vector<string> Character::possibleMoves(XYZ xyz) {
-    vector<string> rooms = xyz.listRooms()[*location]["connect"];
-    rooms.push_back("Cancel");
-    return rooms;
+json Character::possibleMoves(XYZ xyz) {
+    json moves;
+    json rooms = xyz.listRooms();
+    vector<int> a = rooms[*location]["coordinates"];
+    for (auto i : rooms[*location]["connect"]) {
+        vector<int> b = rooms[i]["coordinates"];
+        moves[i] = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
+    }
+    return moves;
 }
 
 void Character::printMoves(XYZ xyz, vector<string> moves) {
@@ -56,17 +71,24 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
     cout << "Enter: ";
 }
 
-int Character::move(XYZ xyz, string room) {
-    if (room == "Cancel") {
-        return 0;
-    } else {
-        cout << "Moving...\n";
-        vector<int> a = xyz.listRooms()[*location]["coordinates"];
-        vector<int> b = xyz.listRooms()[room]["coordinates"];
-        int c = round((pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)) / 10);
-        *location = room;
-        return c;
+void Character::move(string room, vector<int> coords, 
+                    int expTime, int *time) 
+{
+    float m = (coords[1]-*y) / (coords[0]-*x);
+    float b = *y - m * *x;
+    float start = *x;
+
+    cout << "\nMoving...\n";
+    for (int i = 0; i <= expTime; i++) {
+        cout << "Time: " << (*time)++; 
+        *x = float(coords[0] - start) * float(i) / float(expTime) + start;
+        *y = m * *x + b;
+        cout << " X: " << round(*x) << " Y: " 
+             << round(*y) << "\n";
+        Sleep(1000);
     }
+    *location = room;
+    return;
 }
 
 vector<string> User::possibleActions() {
