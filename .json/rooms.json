@@ -10,7 +10,7 @@
         },
         "Passage One": {
             "connect": [
-                "Start zero",
+                "Start Zero",
                 "Hall One"
             ],
             "coordinates": [
@@ -40,7 +40,7 @@
             "connect": [
                 "Passage Two",
                 "Start One",
-                "stage"
+                "Stage"
             ],
             "coordinates": [
                 -30, 0
@@ -49,13 +49,13 @@
         "Start One": {
             "connect": [
                 "Hall Two",
-                "terminal"
+                "Terminal"
             ],
             "coordinates": [
                 -15, 0
             ]
         },
-        "terminal": {
+        "Terminal": {
             "connect": [
                 "Start One"
             ],
@@ -63,7 +63,7 @@
                 0, 0
             ]
         },
-        "stage": {
+        "Stage": {
             "connect": [
                 "Hall Two",
                 "Passage Four"

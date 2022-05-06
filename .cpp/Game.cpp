@@ -14,6 +14,16 @@ using namespace nlohmann;
 // HELPER FUNCTIONS
 // -------------------------------------------------------
 
+string cap(string s) {
+    s[0] = toupper(s[0]);
+    for (int i = 1; i < s.length(); i++) {
+        if (s[i-1] == ' ') {
+            s[i] = toupper(s[i]);
+        }
+    }
+    return s;
+}
+
 string decap(string s) {
     for (int i = 0; i < s.length(); i++) {
         s[i] = tolower(s[i]);
@@ -30,17 +40,44 @@ int enumConvert(string s, vector<string> vec) {
     }
 }
 
-int printJson(json options) {
+int printJson(json dict) {
     int count = 0;
-    for (auto i : options.items()) {
+    for (auto i: dict.items()) {
         cout << count << ". " << i.key();
-        if (i.value().is_number())
+        if (i.value().is_number()) 
             cout << ": " << i.value();
         cout << "\n";
         count++;
     }
-    cout << count << ". Back\nEnter: ";
+    cout << count << ". Cancel\nEnter: ";
     return count;
+}
+
+void printJsonRepeat(json dict) {
+    for (auto i: dict.items()) {
+        if (i.value().is_number()) {
+            cout << "    " << i.key() << ": " << i.value() << "\n";
+        } else {
+            cout << "    " << i.key() << ": ";
+            printJsonRepeat(dict[i.key()]);
+        }
+    }
+}
+
+int printJsonAll(json dict) {
+    int count = 0;
+    for (auto i: dict.items()) {
+        cout << count++ << ". " << i.key() << ": \n";
+        printJsonRepeat(dict[i.key()]);
+    }
+    cout << count << ". Cancel\nEnter: ";
+    return count;
+}
+
+void update(string link, json file) {
+    ofstream ofs(link);
+    ofs << file;
+    ofs.close();
 }
 
 // GAME CLASS
@@ -109,12 +146,6 @@ int *Game::getTime() {
     return time;
 }
 
-void updateOptions(json options) {
-    ofstream ofs(".json/options.json");
-    ofs << options;
-    ofs.close();
-}
-
 json Game::optionsInputType(json options) {
     vector<string> allInputs = {"enumeration", "string", "cancel"};
 
@@ -149,7 +180,7 @@ json Game::optionsInputType(json options) {
 }
 
 void Game::options() {
-    vector<string> allOptions = {"input type", "back"};
+    vector<string> allOptions = { "input type", "cancel" };
 
     cout << "\nOPTIONS:\n\n";
     ifstream ifs(".json/options.json");
@@ -169,7 +200,7 @@ void Game::options() {
                 break;
             case 1: // Back
                 *enumChoice = -1;
-                updateOptions(options);
+                update(".json/options.json", options);
                 return;
             default:
                 *enumChoice = -1;
@@ -180,27 +211,53 @@ void Game::options() {
 }
 
 void Game::manual() {
+    return;
 }
 
 void Game::moving(XYZ xyz, Character zero) {
     json moves = zero.possibleMoves(xyz);
-    vector<string> allMoves, capMoves;
+    vector<string> allMoves;
+    vector<string> allMovement;
     for (auto i : moves.items()) {
         allMoves.push_back(decap(i.key()));
-        capMoves.push_back(i.key());
     }
-    int count = printJson(moves);
+    int count = printJsonAll(moves);
 
     Game::choiceReset();
     while (true) {
         Game::convertInput(allMoves);
         if (*enumChoice != -1) {
-            if (*enumChoice < moves.size()) {
-                string room = capMoves[*enumChoice];
+            if (*enumChoice < count) {
+                string room = cap(allMoves[*enumChoice]);
                 vector<int> coords = xyz.listRooms()[room]["coordinates"];
-                int expTime = moves[room];
-                zero.move(room, coords, expTime, time);
                 *enumChoice = -1;
+                cout << "\n";
+                count = printJson(moves[room]);
+
+                for (auto i : moves[room].items()) {
+                    allMovement.push_back(decap(i.key()));
+                }
+
+                Game::choiceReset();
+                while (true) {
+                    Game::convertInput(allMovement);
+                    if (*enumChoice != -1) {
+                        if (*enumChoice < count) {
+                            string movement = cap(allMovement[*enumChoice]);
+                            int expTime = moves[room][movement];
+                            cout << "\n" << movement << "...\n";
+                            zero.move(room, coords, expTime, time);
+                            *enumChoice = -1;
+                            break;
+                        } else if (*enumChoice == count) {
+                            *enumChoice = -1;
+                            break;
+                        } else {
+                            *enumChoice = -1;
+                            cout << "Not a valid move!\n\n";                            
+                        }
+                    }
+                }
                 return;
             } else if (*enumChoice == count) {
                 *enumChoice = -1;
@@ -215,7 +272,7 @@ void Game::moving(XYZ xyz, Character zero) {
 }
 
 void Game::purchasing(Character zero, string key, int value) {
-    vector<string> allChoices = {"yes", "no", "cancel"};
+    vector<string> allChoices = { "yes", "no" };
 
     cout << "Purchase " << key << " for " << value << "?\n\n"
                                                       "0. Yes\n1. No\nEnter: ";
@@ -233,8 +290,6 @@ void Game::purchasing(Character zero, string key, int value) {
                 *enumChoice = -1;
                 return;
             }
-            cout << "Purchase " << key << " for " << value << "?\n\n"
-                                                              "0. Yes\n1. No\nEnter: ";
         }
     }
 }
@@ -280,9 +335,9 @@ void Game::buildingInner(Character zero, json catalog) {
 }
 
 void Game::building(Character zero) {
-    vector<string> allActions = {"tools", "weapons", "back"};
+    vector<string> allActions = {"tools", "weapons", "cancel" };
 
-    cout << "\n\nBUILD:";
+    cout << "\n\nBUILD:\n";
 
     ifstream ifs(".json/items.json");
     json catalog = json::parse(ifs);
@@ -364,7 +419,7 @@ void Game::play() {
 
 void Game::menu() {
     vector<string> allChoices = {"new", "resume", "options",
-                                 "manual", "exit"};
+                                 "manual", "exit" };
     string menuStr = "\n0. New\n1. Resume\n2. Options\n3. Manual"
                      "\n4. Exit\nEnter: ";
     cout << menuStr;

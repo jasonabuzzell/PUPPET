@@ -52,13 +52,18 @@ void Character::printActions(XYZ xyz, vector<string> actions) {
     cout << "Enter: ";
 }
 
-json Character::possibleMoves(XYZ xyz) {
+json Character::possibleMoves(XYZ xyz) { 
     json moves;
     json rooms = xyz.listRooms();
     vector<int> a = rooms[*location]["coordinates"];
     for (auto i : rooms[*location]["connect"]) {
         vector<int> b = rooms[i]["coordinates"];
-        moves[i] = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
+        moves[i] = {};
+        // Uses sqrt().
+        int dist = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
+        moves[i]["Walking"] = dist; // like 1m/s.
+        moves[i]["Crouching"] = dist * 3;
+        moves[i]["Running"] = static_cast<int>(round(float(dist) / 3));
     }
     return moves;
 }
@@ -74,19 +79,18 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
 void Character::move(string room, vector<int> coords, 
                     int expTime, int *time) 
 {
-    float m = (coords[1]-*y) / (coords[0]-*x);
-    float b = *y - m * *x;
-    float start = *x;
-
-    cout << "\nMoving...\n";
-    for (int i = 0; i <= expTime; i++) {
+    float startX = *x;
+    float startY = *y;
+    for (int i = 0; i < expTime; i++) {
         cout << "Time: " << (*time)++; 
-        *x = float(coords[0] - start) * float(i) / float(expTime) + start;
-        *y = m * *x + b;
+        *x = (coords[0] - startX) * (i / float(expTime)) + startX;
+        *y = (coords[1] - startY) * (i / float(expTime)) + startY;
         cout << " X: " << round(*x) << " Y: " 
              << round(*y) << "\n";
         Sleep(1000);
     }
+    *x = coords[0];
+    *y = coords[1];
     *location = room;
     return;
 }
