@@ -12,21 +12,28 @@ class Game
     public:
         Game();
         void convertInput(nlohmann::json allChoices);
+        void convertStrInt();
         void choiceReset();
         void getInput();
         int *getTime();
         int *getTimer();
         void exitCheck();
-        void purchasing(Character zero, std::string key, int value);
+        void build(std::string key, int value);
         void buildingInner(Character zero, nlohmann::json catalog);
-        void menu();
         nlohmann::json optionsInputType(nlohmann::json options);
         void options();
         void manual();
         void moving(XYZ xyz, Character zero);
+        void use(XYZ xyz, Character zero);
         void building(Character zero);
-        void play();
-        void main();
+        void waiting();
+        void singleplayerSelection();
+        void save();
+        void load(nlohmann::json xyzFile, nlohmann::json charactersFile);
+        void newGame();
+        void resumeGame();
+        void singlePlayer(XYZ xyz, User zero, std::vector<Character> characters);
+        void menu();
 
     private:
         std::string input;
@@ -35,8 +42,6 @@ class Game
         int *enumChoice;
         bool *exit;
         int *time;
-        int currentFile;
-        int resume;
 };
 
 #endif

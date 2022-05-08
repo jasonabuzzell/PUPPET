@@ -12,7 +12,7 @@ void inputCall(Game game) {
 int main() {
     Game game;
     thread t_input(inputCall, game);
-    game.main();
+    game.menu();
     t_input.detach();
 
     return 0;

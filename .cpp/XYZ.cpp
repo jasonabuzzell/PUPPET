@@ -16,6 +16,10 @@ XYZ::XYZ()
     cout << "----------------------------\n";
 }
 
+void XYZ::setConfig(int state) {
+    config = state;
+}
+
 json XYZ::listRooms() {
     ifstream ifs(".json/rooms.json");
     json rooms = json::parse(ifs);

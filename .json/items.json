@@ -9,7 +9,9 @@
         "Radar": 100,
         "Sonar": 100,
         "Chaff Grenade": 100,
-        "Instant Disposal": 200
+        "Instant Disposal": 200,
+        "Printer Pen": 100,
+        "Printer Carry": 300
     },
     "Weapons" : {
         "Handgun": 100,

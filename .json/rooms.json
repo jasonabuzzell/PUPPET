@@ -1,206 +1,115 @@
 {
     "0": {
-        "Start Zero": {
-            "connect": [
-                "Passage One"
-            ],
-            "coordinates": [
-                -80, 0
-            ]
+        "Start 0": {
+            "A": {
+                "coords": [0, 0, 0],
+                "connect": {
+                    "Start 0": ["B"]
+                }
+            },
+            "B": {
+                "coords": [0, 7, 0],
+                "connect": {
+                    "Start 0": ["A"],
+                    "Room 1": ["A"]
+                }
+            }, "items": {}
         },
-        "Passage One": {
-            "connect": [
-                "Start Zero",
-                "Hall One"
-            ],
-            "coordinates": [
-                -65, 0
-            ]
+        "Room 1": {
+            "A": {
+                "coords": [0, 8, 0],
+                "connect": {
+                    "Start 0": ["B"],
+                    "Room 1": ["B", "C"]
+                }
+            },
+            "B": {
+                "coords": [0, 13, 0],
+                "connect": {
+                    "Room 1": ["A", "C"]
+                }
+            },
+            "C": {
+                "coords": [0, 17, 0],
+                "connect": {
+                    "Room 1": ["A", "B"],
+                    "Passage 1": ["A"]
+                }
+            }, "items": {}
         },
-        "Hall One": {
-            "connect": [
-                "Passage One",
-                "Passage Two"
-            ],
-            "coordinates": [
-                -50, 0
-            ]
+        "Passage 1": {
+            "A": {
+                "coords": [0, 18, 0],
+                "connect": {
+                    "Room 1": ["C"],
+                    "Passage 1": ["B"]
+                }
+            },
+            "B": {
+                "coords": [0, 38, 0],
+                "connect": {
+                    "Passage 1": ["A"],
+                    "Lobby": ["A"]
+                }
+            }, "items": {}
         },
-        "Passage Two": {
-            "connect": [
-                "Hall One",
-                "Hall Two",
-                "Hall Four"
-            ],
-            "coordinates": [
-                -40, 0
-            ]
+        "Lobby": {
+            "A": {
+                "coords": [0, 41, 0],
+                "connect": {
+                    "Passage 1": ["B"],
+                    "Lobby": ["B", "C", "D", "E"]
+                }
+            },
+            "B": {
+                "coords": [7, 43, 0],
+                "connect": {
+                    "Lobby": ["A", "C", "D", "E"],
+                    "Passage 2": ["A"]
+                }
+            },
+            "C": {
+                "coords": [-7, 43, 0],
+                "connect": {
+                    "Lobby": ["A", "B", "D", "E"],
+                    "Passage 3": ["A"]
+                }
+            },
+            "D": {
+                "coords": [0, 48, 0],
+                "connect": {
+                    "Lobby": ["A", "B", "C", "E"]
+                }
+            },
+            "E": {
+                "coords": [0, 52, 0],
+                "connect": {
+                    "Lobby": ["A", "B", "C", "D"],
+                    "Passage 6": ["A"]
+                }
+            }, "items": {}
         },
-        "Hall Two": {
-            "connect": [
-                "Passage Two",
-                "Start One",
-                "Stage"
-            ],
-            "coordinates": [
-                -30, 0
-            ]
-        },
-        "Start One": {
-            "connect": [
-                "Hall Two",
-                "Terminal"
-            ],
-            "coordinates": [
-                -15, 0
-            ]
-        },
-        "Terminal": {
-            "connect": [
-                "Start One"
-            ],
-            "coordinates": [
-                0, 0
-            ]
-        },
-        "Stage": {
-            "connect": [
-                "Hall Two",
-                "Passage Four"
-            ],
-            "coordinates": [
-                -30, 20
-            ]
-        },
-        "Passage Four": {
-            "connect": [
-                "Pool",
-                "Stage"
-            ],
-            "coordinates": [
-                -45, 15
-            ]
-        },
-        "Pool": {
-            "connect": [
-                "Hall Three",
-                "Passage Four"
-            ],
-            "coordinates": [
-                -70, 10
-            ]
-        },
-        "Hall Three": {
-            "connect": [
-                "Pool",
-                "Passage Five"
-            ],
-            "coordinates": [
-                -55, 40
-            ]
-        },
-        "Passage Five": {
-            "connect": [
-                "Hall Three"
-            ],
-            "coordinates": [
-                -45, 40
-            ]
-        },
-        "Hall Four": {
-            "connect": [
-                "Passage Two",
-                "Breaker",
-                "Passage Three"
-            ],
-            "coordinates": [
-                -40, -10
-            ]
-        },
-        "Breaker": {
-            "connect": [
-                "Hall Four"
-            ],
-            "coordinates": [
-                -20, -10
-            ]
-        },
-        "Passage Three": {
-            "connect": [
-                "Hall Four",
-                "Storage One",
-                "Hall Five"
-            ],
-            "coordinates": [
-                -55, -15
-            ]
-        },
-        "Storage One": {
-            "connect": [
-                "Passage Three"
-            ],
-            "coordinates": [
-                -70, -20
-            ]
-        },
-        "Hall Five": {
-            "connect": [
-                "Passage Three",
-                "Storage Two",
-                "Passage Six",
-                "Passage Seven"
-            ],
-            "coordinates": [
-                -50, -30
-            ]
-        },
-        "Storage Two": {
-            "connect": [
-                "Hall Five"
-            ],
-            "coordinates": [
-                -40, -30
-            ]
-        },
-        "Passage Six": {
-            "connect": [
-                "Hall Five",
-                "Hospital",
-                "Start Two"
-            ],
-            "coordinates": [
-                -30, -40
-            ]
-        },
-        "Hospital": {
-            "connect": [
-                "Passage Six",
-                "Passage Seven"
-            ],
-            "coordinates": [
-                -45, -40
-            ]
-        },
-        "Passage Seven": {
-            "connect": [
-                "Hall Five",
-                "Hospital"
-            ],
-            "coordinates": [
-                -60, -40
-            ]
-        },
-        "Start Two": {
-            "connect": [
-                "Passage Six"
-            ],
-            "coordinates": [
-                -20, -50
-            ]
+        "Start 1": {
+            "A": {
+                "coords": [20, 80, 0],
+                "connect": {
+                    "Start 1": ["B", "C"],
+                    "Passage 9": ["B"]
+                }
+            },
+            "B": {
+                "coords": [20, 86, 0],
+                "connect": {
+                    "Start 1": ["A", "C"]
+                }
+            },
+            "C": {
+                "coords": [25, 88, 0],
+                "connect": {
+                    "Start 1": ["A", "B"],
+                    "Staircase": ["A"]
+                }
+            }, "items": {}
         }
-    },
-    "1": {},
-    "2": {},
-    "3": {},
-    "4": {}
+    }
 }
