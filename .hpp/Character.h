@@ -14,10 +14,15 @@ class Character
         void setPoint(std::string poi);
         std::string *getLocation();
         std::string *getPoint();
-        int *getTimer();
         float *getX();
         float *getY();
-        virtual std::vector<std::string> possibleActions();
+        float *getZ();
+        std::vector<std::string> getInventory();
+        bool getMoveFlag();
+        bool getLookFlag();
+        bool getAbleFlag();
+        std::vector<std::string> possibleActions();
+        void look(XYZ xyz);
         void printActions(XYZ xyz, std::vector<std::string> actions);
         std::vector<std::string> allActions(XYZ xyz);
         nlohmann::json possibleMoves(XYZ xyz);
@@ -31,21 +36,12 @@ class Character
         float *x;
         float *y;
         float *z;
-        int *timer;
         std::vector<std::string> inventory;
         bool moveFlag;
         bool lookFlag;
         bool ableFlag;
     private:
         int decision;
-};
-
-class User: public Character
-{
-    public:
-        using Character::Character;
-        std::vector<std::string> possibleActions();
-        void look(XYZ xyz);
 };
 
 #endif

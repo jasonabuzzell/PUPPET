@@ -10,6 +10,7 @@ class XYZ
 {
     public:
         XYZ();
+        int getConfig();
         void setConfig(int state);
         nlohmann::json listRooms();
 

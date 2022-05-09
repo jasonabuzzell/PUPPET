@@ -230,8 +230,91 @@ void Game::options() {
     }
 }
 
+void Game::manualInner(int choice, ifstream *readme) {
+    string line;
+    vector<string> allChoices = { "previous", "next", "back" };
+    int pages[5][2] = { {13, 62}, {63, 64}, {65, 66}, {67, 68}, {69, 70} };
+
+    readme->clear();
+    readme->seekg(0);
+    for (int i = 0; i < pages[choice][0]; i++) {
+        getline(*readme, line);
+    }
+    for (int i = pages[choice][0]; i < pages[choice][1]; i++) {
+        getline(*readme, line);
+        cout << line << "\n";
+    }
+
+    cout << "0. Previous\n1. Next\n2. Back\nEnter: ";
+    Game::choiceReset();
+    while (true) {
+        Game::convertInput(allChoices);
+        if (*enumChoice != -1) {
+            switch (*enumChoice) {
+                case 0: // Previous
+                    *enumChoice = -1;
+                    if (choice == 0) return;
+                    else manualInner(--choice, readme);
+                    break;
+                case 1: // Next
+                    *enumChoice = -1;
+                    if (choice == allChoices.size()) return;
+                    else manualInner(++choice, readme);
+                case 2: // Back
+                    *enumChoice = -1;
+                    return;
+                default:
+                    *enumChoice = -1;
+                    cout << "Not a valid choice!\n\n";
+            }
+            for (int i = pages[choice][0]; i < pages[choice][1]; i++) {
+                getline(*readme, line);
+                cout << line << "\n";
+            }
+            cout << "0. Previous\n1. Next\n2. Back\nEnter: ";
+        }
+    }
+}
+
 void Game::manual() {
-    return;
+    string line;
+    ifstream readme(".txt/manual.txt");
+    vector<string> allTabs = { "choices", "menus", "controls", "gameplay", "tips", "back" };
+    int count = allTabs.size() - 1;
+
+    readme.clear();
+    readme.seekg(0);
+    for (int i = 0; i < 11; i++) {
+        getline(readme, line);
+        cout << line << "\n";
+    }
+    cout << "5. Back\nEnter: ";
+    Game::choiceReset();
+    while (true) {
+        Game::convertInput(allTabs);
+        if (*enumChoice != -1) {
+            if (*enumChoice < count) {
+                Game::manualInner(*enumChoice, &readme);
+                readme.clear();
+                readme.seekg(0);
+                *enumChoice = -1;
+            } else if (*enumChoice == count) {
+                *enumChoice = -1;
+                readme.close();
+                return;
+            } else {
+                *enumChoice = -1;
+                cout << "Not a valid choice!\n\n";
+            }
+
+            for (int i = 0; i < 11; i++) {
+            string line;
+            getline(readme, line);
+            cout << line << "\n";
+            }
+            cout << "5. Back\nEnter: ";
+        }
+    }
 }
 
 void Game::moving(XYZ xyz, Character zero) {
@@ -308,9 +391,9 @@ void Game::moving(XYZ xyz, Character zero) {
     }
 }
 
-void Game::build(string key, int value) {
+void Game::print(string key, int value) {
     vector<string> allChoices = { "yes", "no" };
-    string print = "Build where?\n0. Printer Room 1\n"
+    string print = "Print where?\n0. Printer Room 1\n"
                     "1. Printer Room 2\n2. Printer Room\n"
                     "3. Cancel\nEnter: ";
 
@@ -357,12 +440,11 @@ void Game::build(string key, int value) {
     }
 }
 
-// Instead of buying, do 3Dprinting instead. Also remove a currency
-// counter and instead make it the time it takes to print.
-// Finally, add the printer only as an item option, so the character
-// has to instead make the tool by hand without the tool.
-// Include necessary materials, too? (Plastic, Copper, Aluminum)
-void Game::buildingInner(Character zero, json catalog) {
+void Game::use(XYZ xyz, Character zero) {
+    string *location = zero.getLocation();
+}
+
+void Game::printingInner(Character zero, json catalog) {
     vector<string> allItems;
     vector<string> capItems;
 
@@ -381,9 +463,9 @@ void Game::buildingInner(Character zero, json catalog) {
                 auto value = catalog[key];
                 *enumChoice = -1;
                 if (value.is_number()) {
-                    Game::build(key, value);
+                    Game::print(key, value);
                 } else {
-                    Game::buildingInner(zero, value);
+                    Game::printingInner(zero, value);
                 }
             } else if (*enumChoice == count) { // Back
                 *enumChoice = -1;
@@ -397,20 +479,16 @@ void Game::buildingInner(Character zero, json catalog) {
     }
 }
 
-void Game::use(XYZ xyz, Character zero) {
-    string *location = zero.getLocation();
-}
-
-void Game::building(Character zero) {
+void Game::printing(Character zero) {
     vector<string> allActions = {"tools", "weapons", "cancel" };
 
-    cout << "\n\nBUILD:\n";
+    cout << "\n\nPRINT:\n";
 
     ifstream ifs(".json/items.json");
     json catalog = json::parse(ifs);
     ifs.close();
 
-    Game::buildingInner(zero, catalog);
+    Game::printingInner(zero, catalog);
 }
 
 void Game::waiting() {
@@ -424,6 +502,7 @@ void Game::waiting() {
                 cout << "Waiting for " << *enumChoice << " seconds...\n";
                 for (int i = 0; i < *enumChoice; i++) {
                     Sleep(1000);
+                    *time++;
                     cout << i << "seconds...\n";
                 }
                 return;
@@ -436,16 +515,55 @@ void Game::waiting() {
     }
 }
 
-void Game::save() {
+void Game::save(XYZ xyz, vector<Character> characters) {
+    string name;
+    vector<string> names = { "zero", "one", "two", "three", "four", "five", "zero"};
+    json save = {};
 
+    // XYZ Save
+    save["xyz"] = {};
+    save["xyz"]["config"] = xyz.getConfig();
+
+    // Characters Save
+    save["characters"] = {};
+    for (int i = 0; i < characters.size(); i++) {
+        json charFile = {};
+        Character character = characters[i];
+        charFile["location"] = *character.getLocation();
+        cout << "charFile: " << charFile.dump() << "\n";
+        cout << "save: " << save.dump() << "\n\n";
+        charFile["point"] = *character.getPoint();
+        charFile["x"] = *character.getX();
+        charFile["y"] = *character.getY();
+        charFile["z"] = *character.getZ();
+        charFile["inventory"] = character.getInventory();
+        charFile["moveFlag"] = character.getMoveFlag();
+        charFile["lookFlag"] = character.getLookFlag();
+        charFile["ableFlag"] = character.getAbleFlag();
+        save["characters"][names[i]] = charFile;
+    }
+
+    save["file"] = true;
+
+    ofstream ofs(".json/save.json");
+    ofs << save;
+    ofs.close();
+
+    cout << "Saved!\n\n";
+    return;
 }
 
-void Game::singlePlayer(XYZ xyz, User zero, vector<Character> characters) {
+// TO DO: Use (Attack?), Print, Automate, Manual <-
+// Add Characters and their logic
+// Add GUI (OpenGL).
+
+void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
     int univChoice = -1;
     vector<string> allActions = {"move", "look", "use",
-                                 "invest", "automate", "wait",
+                                 "print", "automate", "wait",
                                  "manual", "options", "save", "exit"};
     vector<int>::iterator itr;
+    Character zero = characters[0];
 
     cout << "\nTime: " << to_string(*time) << "\nLocation: "
          << *zero.getLocation() << "\n\n";
@@ -464,19 +582,19 @@ void Game::singlePlayer(XYZ xyz, User zero, vector<Character> characters) {
                 *enumChoice = -1;
                 Game::moving(xyz, zero);
                 break;
-            case 1: // Look
+            case 1: // Look (Add items, characters)
                 *enumChoice = -1;
                 zero.look(xyz);
                 break;
-            case 2: // Use
+            case 2: // Use (Need to do)
                 *enumChoice = -1;
                 Game::use(xyz, zero);
                 break;
-            case 3: // Building (call printer)
+            case 3: // Printing (Make and call printer item)
                 *enumChoice = -1;
-                Game::building(zero);
+                Game::printing(zero);
                 break;
-            case 4: // Automate
+            case 4: // Automate (Need to do)
                 *enumChoice = -1;
                 break;
             case 5: // Wait
@@ -493,9 +611,9 @@ void Game::singlePlayer(XYZ xyz, User zero, vector<Character> characters) {
                 break;
             case 8: // Save
                 *enumChoice = -1;
-                Game::save();
+                Game::save(xyz, characters);
                 break;
-            case 9: // Exit (to menu/save or desktop)
+            case 9: // Exit
                 *enumChoice = -1;
                 *exit = true;
                 return;
@@ -513,7 +631,6 @@ void Game::singlePlayer(XYZ xyz, User zero, vector<Character> characters) {
 
 void Game::load(json xyzFile, json charactersFile) {
     XYZ xyz;
-    User zero(xyz, "Start 0", "A");
     vector<Character> characters;
     string location, point;
 
@@ -524,17 +641,13 @@ void Game::load(json xyzFile, json charactersFile) {
     if (!charactersFile.empty()) {
         for (auto i: charactersFile.items()) {
             json characterFile = charactersFile[i.key()];
-            if (i.key() == "zero") {
-                zero.setLocation(characterFile["location"]);
-                zero.setPoint(characterFile["point"]);
-            } else {
-                characters.push_back(Character(xyz, characterFile["location"], characterFile["point"]));
-            }
+            characters.push_back(Character(xyz, characterFile["location"], characterFile["point"]));
         }
     } else {
+        characters.push_back(Character(xyz, "Start 0", "A"));
         characters.push_back(Character(xyz, "Start 1", "B"));
     }
-    Game::singlePlayer(xyz, zero, characters);
+    Game::singlePlayer(xyz, characters);
     return;
 }
 
@@ -611,7 +724,7 @@ void Game::resumeGame() {
     json charactersFile;
     for (auto i: save["characters"].items()) {
         if (!i.value().empty()) {
-            charactersFile[i.key()] = i;
+            charactersFile[i.key()] = i.value();
         }
     }  
     Game::load(xyzFile, charactersFile);

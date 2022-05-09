@@ -16,6 +16,10 @@ XYZ::XYZ()
     cout << "----------------------------\n";
 }
 
+int XYZ::getConfig() {
+    return config;
+}
+
 void XYZ::setConfig(int state) {
     config = state;
 }

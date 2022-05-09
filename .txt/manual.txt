@@ -1,0 +1,69 @@
+PUPPET
+
+[puppet] is a strategy game where your enemies learn from your actions.
+Refer to the following sections of this manual for any game-related
+questions.
+
+0. Choices 
+1. Menus
+2. Controls
+3. Gameplay
+4. Tips
+
+0. CHOICES:
+Throughout [puppet], from first loading the game to exploring the XYZ
+facility, you'll encounter choices. Depending on your style of gameplay 
+(e.g. text adventure (through terminal), audio-only, or GUI), these
+choices will allow you to employ your decision-making and guide your
+character to safety.
+
+In the standard terminal version, choices will appear like this:
+
+0. New
+1. Resume
+2. Options
+3. Manual
+4. Exit
+Enter: 
+
+The "Enter: " allows you to (in this case) type in what you want to do.
+If you wanted to start a new run of [puppet], you would enter "0" or
+"New", depending on your Input Type (Enumeration vs. String). 
+
+These choices will then do the appropriate logic up until requiring a 
+new decision to be made. Because there are many choices, [puppet] allows
+you to automate decisions, using the same machine learning that the enemy
+is using to learn how to defeat you. However, this cannot be done until 
+the action is manually completed once by the user, so it is important to
+know exactly what each choice does. A description has been provided below:
+
+
+"New": 
+"Resume":
+"Options": 
+"Manual": 
+"Cancel"/"Back": 
+"Start": 
+"Save":
+"Exit":
+
+"Move": 
+"Look": 
+"Use":
+"Print":
+"Automate":
+"Wait": 
+"Tools":
+"Weapons": 
+"Yes":
+"No":
+"Enumeration":
+"String":
+
+1. MENUS:
+
+2. CONTROLS:
+
+3. GAMEPLAY:
+
+4. TIPS:

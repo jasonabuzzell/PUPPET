@@ -19,7 +19,6 @@ Character::Character(XYZ xyz, string place, string part)
       x(new float(0.0)),
       y(new float(0.0)),
       z(new float(0.0)),
-      timer(new int(0)),
       moveFlag(true),
       lookFlag(true),
       ableFlag(true) 
@@ -46,21 +45,32 @@ string *Character::getPoint() {
     return point;
 }
 
-int *Character::getTimer() {
-    return timer;
+float *Character::getX() {
+    return x;
 }
 
-vector<string> Character::possibleActions() {
-    vector<string> actions;
+float *Character::getY() {
+    return y;
+}
 
-    if (moveFlag)
-        actions.push_back("Move");
-    if (ableFlag)
-        actions.push_back("Use");
-    actions.push_back("Invest");
-    actions.push_back("Wait");
+float *Character::getZ() {
+    return z;
+}
 
-    return actions;
+vector<string> Character::getInventory() {
+    return inventory;
+}
+
+bool Character::getMoveFlag() {
+    return moveFlag;
+}
+
+bool Character::getLookFlag() {
+    return lookFlag;
+}
+
+bool Character::getAbleFlag() {
+    return ableFlag;
 }
 
 void Character::printActions(XYZ xyz, vector<string> actions) {
@@ -110,8 +120,8 @@ void Character::move(string room, string part, vector<int> coords,
         *x = (coords[0] - startX) * (i / float(expTime)) + startX;
         *y = (coords[1] - startY) * (i / float(expTime)) + startY;
         *z = (coords[2] - startZ) * (i / float(expTime)) + startZ;
-        cout << " X: " << round(*x) << " Y: " 
-             << round(*y) << " Z: " << round(*z) << "\n";
+        cout << " X: " << setprecision(2) << *x << " Y: " 
+             << *y << " Z: " << *z << "\n";
         Sleep(1000);
     }
     *x = coords[0];
@@ -122,16 +132,13 @@ void Character::move(string room, string part, vector<int> coords,
     return;
 }
 
-// USER
-// ----------------------------------------------------------
-
-vector<string> User::possibleActions() {
+vector<string> Character::possibleActions() {
     vector<string> actions;
 
     if (moveFlag) actions.push_back("Move");
     if (lookFlag) actions.push_back("Look");
     if (ableFlag) actions.push_back("Use");
-    actions.push_back("Invest");
+    actions.push_back("Print");
     actions.push_back("Automate");
     actions.push_back("Wait");
     actions.push_back("Manual");
@@ -142,7 +149,7 @@ vector<string> User::possibleActions() {
     return actions;
 }
 
-void User::look(XYZ xyz) {
+void Character::look(XYZ xyz) {
     vector<string> connect = xyz.listRooms()[*location]["connect"];
     cout << "\nLooking...\nRooms:\n";
     for (auto s : connect) {

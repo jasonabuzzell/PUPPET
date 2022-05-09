@@ -1,14 +1,30 @@
 {
-    "file": false,
+    "characters": {
+        "one": {
+            "ableFlag": true,
+            "inventory": [],
+            "location": "Start 1",
+            "lookFlag": true,
+            "moveFlag": true,
+            "point": "B",
+            "x": 20.0,
+            "y": 86.0,
+            "z": 0.0
+        },
+        "zero": {
+            "ableFlag": true,
+            "inventory": [],
+            "location": "Start 0",
+            "lookFlag": true,
+            "moveFlag": true,
+            "point": "A",
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        }
+    },
+    "file": true,
     "xyz": {
         "config": 0
-    },
-    "characters": {
-        "zero": {},
-        "one": {},
-        "two": {},
-        "three": {},
-        "four": {},
-        "five": {}
     }
 }
