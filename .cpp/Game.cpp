@@ -2,6 +2,7 @@
 #include "../.hpp/Character.h"
 #include "../.hpp/Room.h"
 #include "../.hpp/XYZ.h"
+#include "../.hpp/Helper.h"
 #include "../.hpp/json.hpp"
 #include <fstream>
 #include <iostream>
@@ -10,83 +11,6 @@
 
 using namespace std;
 using namespace nlohmann;
-
-// HELPER FUNCTIONS
-// -------------------------------------------------------
-
-string cap(string s) {
-    s[0] = toupper(s[0]);
-    for (int i = 1; i < s.length(); i++) {
-        if (s[i-1] == ' ') {
-            s[i] = toupper(s[i]);
-        }
-    }
-    return s;
-}
-
-string decap(string s) {
-    for (int i = 0; i < s.length(); i++) {
-        s[i] = tolower(s[i]);
-    }
-    return s;
-}
-
-int enumConvert(string s, vector<string> vec) {
-    auto itr = find(vec.begin(), vec.end(), s);
-    if (itr == vec.end()) {
-        return -2;
-    } else {
-        return distance(vec.begin(), itr);
-    }
-}
-
-int printJson(json dict) {
-    int count = 0;
-    cout << "\n";
-    for (auto i: dict.items()) {
-        cout << count << ". " << i.key();
-        if (i.value().is_number()) 
-            cout << ": " << i.value();
-        cout << "\n";
-        count++;
-    }
-    cout << count << ". Cancel\nEnter: ";
-    return count;
-}
-
-void printJsonRepeat(json dict, int itr) {
-    for (auto i: dict.items()) {
-        cout << "\n";
-        for (int i = 0; i < itr; i++) {
-            cout << "  ";
-        }
-        cout << i.key() << ": ";
-        if (i.value().is_number()) {
-            cout << i.value();
-        } else {
-            printJsonRepeat(dict[i.key()], ++itr);
-        }
-    }
-}
-
-int printJsonAll(json dict) {
-    int count = 0;
-    for (auto i: dict.items()) {
-        cout << "\n" << count++ << ". " << i.key() << ":";
-        printJsonRepeat(dict[i.key()], 1);
-    }
-    cout << "\n" << count << ". Cancel\nEnter: ";
-    return count;
-}
-
-void update(string link, json file) {
-    ofstream ofs(link);
-    ofs << file;
-    ofs.close();
-}
-
-// GAME CLASS
-// -----------------------------------------------------
 
 Game::Game()
     : time(new int(0)),
@@ -138,146 +62,129 @@ void Game::getInput() {
     }
 }
 
-void Game::convertInput(json allChoices) {
-    if (*strChoice != "") {
-        *enumChoice = enumConvert(*strChoice, allChoices);
-        *strChoice = "";
-    }
-}
-
-void Game::convertStrInt() {
-    if (*strChoice != "") {
-        try {
-            for (auto c : *strChoice) {
-                if (!isdigit(c))
-                    throw 1;
+int Game::choice(vector<string> allChoices, string print, int count=0) {
+    int choice;
+    *enumChoice = -1;
+    *strChoice = "";  
+    
+    cout << print;
+    while(true) {
+        // String Choice
+        if (*strChoice != "") {
+            // Number in String Choice
+            if (allChoices.empty()) {
+                choice = convertStrInt(*strChoice);
+                *strChoice = "";
+                *enumChoice = -1;
+                return choice;
+            } else {
+                *enumChoice = enumConvert(*strChoice, allChoices);
+                *strChoice = "";
             }
-            *enumChoice = stoi(*strChoice);
-        } catch (int e) {
-            cout << "Did not understand input! "
-                    "Please put in a non-negative integer (e.g. 1)."
-                    "\n\nEnter: ";
+        }
+        // Enumerator Choice
+        if (*enumChoice != -1) {
+            // Number in Enumerator Choice
+            if (allChoices.empty()) {
+                choice = *enumChoice;
+                *enumChoice = -1;
+                return choice;
+            } else if (*enumChoice > count || *enumChoice < 0) {
+                *enumChoice = -1;
+                cout << "Not a valid choice!\n" << print;
+            } else {
+                choice = *enumChoice;
+                *enumChoice = -1;
+                return choice;
+            }
         }
     }
-}
-
-void Game::choiceReset() {
-    *enumChoice = -1;
-    *strChoice = "";
 }
 
 json Game::optionsInputType(json options) {
     vector<string> allInputs = {"enumeration", "string", "cancel"};
+    string print = "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
+                   "2. Cancel\nEnter: ";
 
-    cout << "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
-            "2. Cancel\nEnter: ";
-
-    Game::choiceReset();
-
-    while (true) {
-        Game::convertInput(allInputs);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-            case 0: // Enumerator
-                *enumChoice = -1;
-                *inputType = "Enumeration";
-                options["Input Type"] = "Enumeration";
-                return options;
-            case 1: // String
-                *enumChoice = -1;
-                *inputType = "String";
-                options["Input Type"] = "String";
-                return options;
-            case 2: // Cancel
-                *enumChoice = -1;
-                return options;
-            default:
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n\nEnter: ";
-            }
-        }
+    int choice = Game::choice(allInputs, print, allInputs.size());
+    switch (choice) {
+    case 0: // Enumerator
+        *inputType = "Enumeration";
+        options["Input Type"] = "Enumeration";
+        break;
+    case 1: // String
+        *inputType = "String";
+        options["Input Type"] = "String";
+        break;
+    case 2: return options; // Cancel  
     }
+
+    ofstream ofs(".json/options.json");
+    ofs << options;
+    ofs.close();
+
+    return options;
 }
 
 void Game::options() {
+    int choice;
+    Strint strint("", -1);
     vector<string> allOptions = { "input type", "cancel" };
 
-    cout << "\nOPTIONS:\n\n";
+    cout << "\nOPTIONS:\n";
     ifstream ifs(".json/options.json");
     json options = json::parse(ifs);
     ifs.close();
-    printJson(options);
 
-    Game::choiceReset();
     while (true) {
-        Game::convertInput(allOptions);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-            case 0: // inputType
-                options = Game::optionsInputType(options);
-                cout << "\n";
-                printJson(options);
-                break;
-            case 1: // Back
-                *enumChoice = -1;
-                update(".json/options.json", options);
-                return;
-            default:
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n\nEnter: ";
-            }
+        strint = printJson(options);
+        choice = Game::choice(allOptions, strint.getStr(), strint.getInt());
+        switch (choice) {
+        case 0: // inputType
+            options = Game::optionsInputType(options);
+            break;
+        case 1: return; // Back
         }
     }
 }
 
-void Game::manualInner(int choice, ifstream *readme) {
+void Game::manualInner(int choose, ifstream *readme) {
     string line;
+    string print;
     vector<string> allChoices = { "previous", "next", "back" };
     int pages[5][2] = { {13, 62}, {63, 64}, {65, 66}, {67, 68}, {69, 70} };
 
     readme->clear();
     readme->seekg(0);
-    for (int i = 0; i < pages[choice][0]; i++) {
+    for (int i = 0; i < pages[choose][0]; i++) {
         getline(*readme, line);
     }
-    for (int i = pages[choice][0]; i < pages[choice][1]; i++) {
+    for (int i = pages[choose][0]; i < pages[choose][1]; i++) {
         getline(*readme, line);
-        cout << line << "\n";
+        print += line + "\n";
     }
 
-    cout << "0. Previous\n1. Next\n2. Back\nEnter: ";
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allChoices);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-                case 0: // Previous
-                    *enumChoice = -1;
-                    if (choice == 0) return;
-                    else manualInner(--choice, readme);
-                    break;
-                case 1: // Next
-                    *enumChoice = -1;
-                    if (choice == allChoices.size()) return;
-                    else manualInner(++choice, readme);
-                case 2: // Back
-                    *enumChoice = -1;
-                    return;
-                default:
-                    *enumChoice = -1;
-                    cout << "Not a valid choice!\n\n";
-            }
-            for (int i = pages[choice][0]; i < pages[choice][1]; i++) {
-                getline(*readme, line);
-                cout << line << "\n";
-            }
-            cout << "0. Previous\n1. Next\n2. Back\nEnter: ";
-        }
+    print += "0. Previous\n1. Next\n2. Back\nEnter: ";
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    switch (choice) {
+    case 0: // Previous
+        *enumChoice = -1;
+        if (choice == 0) return;
+        else manualInner(--choose, readme);
+        break;
+    case 1: // Next
+        *enumChoice = -1;
+        if (choice == allChoices.size()) return;
+        else manualInner(++choose, readme);
+    case 2: // Back
+        *enumChoice = -1;
+        return;
     }
 }
 
 void Game::manual() {
     string line;
+    string print;
     ifstream readme(".txt/manual.txt");
     vector<string> allTabs = { "choices", "menus", "controls", "gameplay", "tips", "back" };
     int count = allTabs.size() - 1;
@@ -286,34 +193,17 @@ void Game::manual() {
     readme.seekg(0);
     for (int i = 0; i < 11; i++) {
         getline(readme, line);
-        cout << line << "\n";
+        print += line + "\n";
     }
-    cout << "5. Back\nEnter: ";
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allTabs);
-        if (*enumChoice != -1) {
-            if (*enumChoice < count) {
-                Game::manualInner(*enumChoice, &readme);
-                readme.clear();
-                readme.seekg(0);
-                *enumChoice = -1;
-            } else if (*enumChoice == count) {
-                *enumChoice = -1;
-                readme.close();
-                return;
-            } else {
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n\n";
-            }
-
-            for (int i = 0; i < 11; i++) {
-            string line;
-            getline(readme, line);
-            cout << line << "\n";
-            }
-            cout << "5. Back\nEnter: ";
-        }
+    print += to_string(count) + ". Back\nEnter: ";
+    int choice = Game::choice(allTabs, print, count);
+    if (choice < count) {
+        Game::manualInner(*enumChoice, &readme);
+        readme.clear();
+        readme.seekg(0);
+    } else if (choice == count) {
+        readme.close();
+        return;
     }
 }
 
@@ -323,159 +213,113 @@ void Game::moving(XYZ xyz, Character zero) {
     for (auto i : moves.items()) {
         allMoves.push_back(decap(i.key()));
     }
-    int count = printJson(moves);
+    Strint strint = printJson(moves);
 
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allMoves);
-        if (*enumChoice != -1) {
-            if (*enumChoice < count) {
-                string room = cap(allMoves[*enumChoice]);
-                json roomChoice = moves[room];
-                count = printJsonAll(roomChoice);
-                for (auto i: roomChoice.items()) {
-                    allPoints.push_back(decap(i.key()));
-                }
-                Game::choiceReset();
-                while (true) {
-                    Game::convertInput(allPoints);
-                    if (*enumChoice != -1) {
-                        if (*enumChoice < count) {
-                            string point = cap(allPoints[*enumChoice]);
-                            json pointChoice = roomChoice[point];
-                            vector<int> coords = xyz.listRooms()[room][point]["coords"];
-                            count = printJson(pointChoice);
-                            for (auto i: pointChoice.items()) {
-                                allMovement.push_back(decap(i.key()));
-                            }
-                            Game::choiceReset();
-                            while (true) {
-                                Game::convertInput(allMovement);
-                                if (*enumChoice != -1) {
-                                    if (*enumChoice < count) {
-                                        string movement = cap(allMovement[*enumChoice]);
-                                        int expTime = pointChoice[movement];
-                                        cout << "\n" << movement << "...\n";
-                                        *enumChoice = -1;
-                                        zero.move(room, point, coords, expTime, time);
-                                        return;
-                                    } else if (*enumChoice == count) {
-                                        *enumChoice = -1;
-                                        return;
-                                    } else {
-                                        *enumChoice = -1;
-                                        cout << "Not a valid move!\n\n";
-                                        printJson(moves);                                        
-                                    }                                
-                                }
-                            }
-                        } else if (*enumChoice == count) {
-                            *enumChoice = -1;
-                            return;
-                        } else {
-                            *enumChoice = -1;
-                            cout << "Not a valid move!\n\n";
-                            printJsonAll(moves);
-                        }
-                    }
-                }
-            } else if (*enumChoice == count) {
-                *enumChoice = -1;
-                return;
-            } else {
-                *enumChoice = -1;
-                cout << "Not a valid move!\n\n";
-            }
-            printJson(moves);
+    int choice = Game::choice(allMoves, strint.getStr(), strint.getInt());
+    if (choice < strint.getInt()) {
+        string room = cap(allMoves[choice]);
+        json roomChoice = moves[room];
+        strint = printJsonAll(roomChoice);
+        for (auto i: roomChoice.items()) {
+            allPoints.push_back(decap(i.key()));
         }
+
+        choice = Game::choice(allPoints, strint.getStr(), strint.getInt());
+        if (choice < strint.getInt()) {
+            string point = cap(allPoints[choice]);
+            json pointChoice = roomChoice[point];
+            vector<int> coords = xyz.listRooms()[room][point]["coords"];
+            strint = printJson(pointChoice);
+            for (auto i: pointChoice.items()) {
+                allMovement.push_back(decap(i.key()));
+            }
+            choice = Game::choice(allMovement, strint.getStr(), strint.getInt());
+            if (choice < strint.getInt()) {
+                string movement = cap(allMovement[choice]);
+                int expTime = pointChoice[movement];
+                cout << "\n" << movement << "...\n";
+                zero.move(room, point, coords, expTime, time);
+                return; 
+            }
+        }
+    } 
+    if (choice == strint.getInt()) return;
+}
+
+// Includes "Take" and "Drop"
+// Need to add time to deploy!
+void Game::use(XYZ xyz, Character zero) {
+    vector<string> allItems;
+    Room room(*zero.getLocation());
+    vector<string> inventory = zero.getInventory();
+    
+    string print = "\nUSE: \n\n" + room.getName() + ":\n";
+    int roomCount = 0;
+    for (auto i: room.items(xyz)) {
+        print += "  " + to_string(roomCount++) + ". " + i + "\n";
+        allItems.push_back(decap(i));
     }
+    int invCount = roomCount;
+    print += "Inventory: \n";
+    for (auto j: inventory) {
+        print += "  " + to_string(invCount++) + ". " + j + "\n";
+        allItems.push_back(decap(j));
+    }
+
+    print += "\n" + to_string(invCount) + ". Cancel\nEnter: ";
+    int choice = Game::choice(allItems, print, invCount);
+    if (*enumChoice < roomCount) { // item in room
+
+    } else if (*enumChoice < invCount) { // item in inventory
+        
+    } else if (*enumChoice == invCount) return; // Cancel
 }
 
 void Game::print(string key, int value) {
     vector<string> allChoices = { "yes", "no" };
-    string print = "Print where?\n0. Printer Room 1\n"
-                    "1. Printer Room 2\n2. Printer Room\n"
-                    "3. Cancel\nEnter: ";
-
-    cout << "Send " << key << " to print for " << value << "seconds?\n\n"
-                                                      "0. Yes\n1. No\nEnter: ";
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allChoices);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-            case 0: // Yes
-                Game::choiceReset();
-                allChoices = { "printer room 1", "printer room 2", 
-                                "printer room 3", "cancel" };
-                cout << print;
-                while (true) {
-                    Game::convertInput(allChoices);
-                    if (*enumChoice != -1) {
-                        switch(*enumChoice) {
-                            case 0:
-                            case 1:
-                            case 2: 
-                                // Send to correct print room printer.
-                                *enumChoice = -1;
-                                return;
-                            case 3: 
-                                *enumChoice = -1;
-                                return;
-                            default:
-                                *enumChoice = -1;
-                                cout << "Not a valid choice!\n\n";
-                        }
-                        cout << print;
-                    }
-                }
-            case 1: // No
-                *enumChoice = -1;
-                return;
-            default:
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n\n";
-            }
+    string print = "Send " + key + " to print for " + to_string(value) + 
+                   " seconds?\n\n0. Yes\n1. No\nEnter: ";
+    // Go from here.
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    switch (choice) {
+    case 0: // Yes
+        allChoices = { "printer room 1", "printer room 2", 
+                        "printer room 3", "cancel" };
+        print = "Print where?\n0. Printer Room 1\n"
+                "1. Printer Room 2\n2. Printer Room\n"
+                "3. Cancel\nEnter: ";
+        choice = Game::choice(allChoices, print, allChoices.size());
+        switch (choice) {
+        case 0:
+        case 1:
+        case 2: 
+            // Send to correct print room printer.
+            return;
+        case 3: return; // Cancel
         }
+    case 1: return; // No
     }
 }
 
-void Game::use(XYZ xyz, Character zero) {
-    string *location = zero.getLocation();
-}
-
+// Running at O(4i), fix this.
 void Game::printingInner(Character zero, json catalog) {
+    int choice;
     vector<string> allItems;
     vector<string> capItems;
 
     for (auto i : catalog.items()) {
-        // Won't need to check for correct type due to logic.
         allItems.push_back(decap(i.key()));
-        capItems.push_back(i.key()); // forced to due this to access.
+        capItems.push_back(i.key()); // forced to do this to access.
     }
-    int count = printJson(catalog); // O(2i): Double for-loop.
-    Game::choiceReset();
+    Strint strint = printJson(catalog); // O(2i): Double for-loop.
     while (true) {
-        Game::convertInput(allItems);
-        if (*enumChoice != -1) {
-            if (*enumChoice > -1 && *enumChoice < allItems.size()) {
-                string key = capItems[*enumChoice];
-                auto value = catalog[key];
-                *enumChoice = -1;
-                if (value.is_number()) {
-                    Game::print(key, value);
-                } else {
-                    Game::printingInner(zero, value);
-                }
-            } else if (*enumChoice == count) { // Back
-                *enumChoice = -1;
-                return;
-            } else {
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n\n";
-            }
-            count = printJson(catalog);
-        }
+        choice = Game::choice(allItems, strint.getStr(), strint.getInt());
+        if (choice < strint.getInt()) {
+            string key = capItems[choice];
+            auto value = catalog[key];
+            if (value.is_number()) Game::print(key, value);
+            else Game::printingInner(zero, value);
+        } else if (choice == strint.getInt()) return; // Back
     }
 }
 
@@ -492,27 +336,18 @@ void Game::printing(Character zero) {
 }
 
 void Game::waiting() {
-    cout << "Wait for how long?\nEnter: ";
+    string print = "\nWait for how long?\nEnter: ";
 
-    Game::choiceReset();
-    while(true) {
-        Game::convertStrInt();
-        if (*enumChoice != -1) {
-            if (*enumChoice >= 0) {
-                cout << "Waiting for " << *enumChoice << " seconds...\n";
-                for (int i = 0; i < *enumChoice; i++) {
-                    Sleep(1000);
-                    *time++;
-                    cout << i << "seconds...\n";
-                }
-                return;
-            } else {
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n";
-            }
-            cout << "Wait for how long?\nEnter: ";
-        }
+    int choice = Game::choice({}, print);
+    cout << "\nWaiting for " << choice << " seconds...\n";
+    for (int i = 1; i <= choice; i++) {
+        Sleep(1000);
+        (*time)++;
+        if (i == 1) cout << i << " second...\n";
+        else cout << i << " seconds...\n";
     }
+
+    return;
 }
 
 void Game::save(XYZ xyz, vector<Character> characters) {
@@ -530,8 +365,6 @@ void Game::save(XYZ xyz, vector<Character> characters) {
         json charFile = {};
         Character character = characters[i];
         charFile["location"] = *character.getLocation();
-        cout << "charFile: " << charFile.dump() << "\n";
-        cout << "save: " << save.dump() << "\n\n";
         charFile["point"] = *character.getPoint();
         charFile["x"] = *character.getX();
         charFile["y"] = *character.getY();
@@ -549,82 +382,57 @@ void Game::save(XYZ xyz, vector<Character> characters) {
     ofs << save;
     ofs.close();
 
-    cout << "Saved!\n\n";
+    cout << "\nSaved!\n\n";
     return;
 }
 
-// TO DO: Use (Attack?), Print, Automate, Manual <-
+// TO DO: Use (Attack?), Print, Automate, Hiding (in Move?)
+// Add all rooms
 // Add Characters and their logic
 // Add GUI (OpenGL).
-
 void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
-    int univChoice = -1;
+    int choice;
+    string print;
     vector<string> allActions = {"move", "look", "use",
                                  "print", "automate", "wait",
                                  "manual", "options", "save", "exit"};
     vector<int>::iterator itr;
     Character zero = characters[0];
 
-    cout << "\nTime: " << to_string(*time) << "\nLocation: "
-         << *zero.getLocation() << "\n\n";
-    vector<string> actions = zero.possibleActions();
-    zero.printActions(xyz, actions);
-
-    Game::choiceReset();
     while (true) {
-        if (!actions.size()) {
-            // No possible movements.
-        }
-        Game::convertInput(allActions);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-            case 0: // Move
-                *enumChoice = -1;
-                Game::moving(xyz, zero);
-                break;
-            case 1: // Look (Add items, characters)
-                *enumChoice = -1;
-                zero.look(xyz);
-                break;
-            case 2: // Use (Need to do)
-                *enumChoice = -1;
-                Game::use(xyz, zero);
-                break;
-            case 3: // Printing (Make and call printer item)
-                *enumChoice = -1;
-                Game::printing(zero);
-                break;
-            case 4: // Automate (Need to do)
-                *enumChoice = -1;
-                break;
-            case 5: // Wait
-                *enumChoice = -1;
-                Game::waiting();
-                break;
-            case 6: // Manual
-                *enumChoice = -1;
-                Game::manual();
-                break;
-            case 7: // Options
-                *enumChoice = -1;
-                Game::options();
-                break;
-            case 8: // Save
-                *enumChoice = -1;
-                Game::save(xyz, characters);
-                break;
-            case 9: // Exit
-                *enumChoice = -1;
-                *exit = true;
-                return;
-            default:
-                *enumChoice = -1;
-                cout << "Not a valid choice!\n";
-            }
-
-            cout << "\nTime: " << to_string(*time) << "\nLocation: "
-                 << *zero.getLocation() << "\n\n";
-            zero.printActions(xyz, actions);
+        print = "\nTime: " + to_string(*time) + "\nLocation: "
+                    + *zero.getLocation() + ", Point: " + *zero.getPoint() + "\n\n" + "0. Move\n1. Look\n2. Use\n3. Print\n4. Automate\n5. Wait\n6. Manual\n7. Options\n8. Save\n9. Exit\nEnter: ";
+        choice = Game::choice(allActions, print, allActions.size());
+        switch (choice) {
+        case 0: // Move
+            Game::moving(xyz, zero);
+            break;
+        case 1: // Look (Add items, characters)
+            zero.look(xyz);
+            break;
+        case 2: // Use (Need to do)
+            Game::use(xyz, zero);
+            break;
+        case 3: // Printing (Make and call printer item)
+            Game::printing(zero);
+            break;
+        case 4: // Automate (Need to do)
+            break;
+        case 5: // Wait
+            Game::waiting();
+            break;
+        case 6: // Manual
+            Game::manual();
+            break;
+        case 7: // Options
+            Game::options();
+            break;
+        case 8: // Save
+            Game::save(xyz, characters);
+            break;
+        case 9: // Exit
+            *exit = true;
+            return;
         }
     }
 }
@@ -654,8 +462,7 @@ void Game::load(json xyzFile, json charactersFile) {
 void Game::newGame() {
     json xyzFile;
     json charactersFile;
-    bool flag = true;
-
+    string print;
     ifstream ifs(".json/characters.json");
     json characters = json::parse(ifs);
     vector<string> allCharacters;
@@ -663,58 +470,30 @@ void Game::newGame() {
     int count = 0;
     for (auto i: characters.items()) {
         if (!i.value().empty()) {
-            cout << count++ << ". " << i.key() << "\n";
+            print += to_string(count++) + ". " + i.key() + "\n";
             allCharacters.push_back(i.key());
         }
     }
     if (allCharacters.empty()) {
-        cout << "\nNo characters to select from...\n\n";
+        print = "\nNo characters to select from...\n\n";
     }
     allCharacters.push_back("start");
-    cout << count++ << ". Start\n" << count << ". Cancel\nEnter: ";
+    print += to_string(count) + ". Start\n";
+    print += to_string(++count) + ". Cancel\nEnter: ";
 
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allCharacters);
-        if (*enumChoice != -1) {
-            if (*enumChoice < count - 1) { // Character Select
-                string name = characters[cap(allCharacters[*enumChoice])];
-                charactersFile[name];
-                cout << "Which team? (e.g. 0, 1)\nEnter: ";
-                Game::choiceReset();
-                while(flag) {
-                    Game::convertStrInt();
-                    if (*enumChoice != -1) {
-                        if (*enumChoice >= 0) {
-                            charactersFile[name]["team"] = *enumChoice;
-                            *enumChoice = -1;
-                            flag = false;
-                            break;
-                        } else {
-                            *enumChoice = -1;
-                            cout << "Not a valid option!\n\n";
-                            cout << "Which team? (e.g. 0, 1)\nEnter: ";
-                        }
-                    }
-                }
-
-            } else if (*enumChoice == count - 1) { // Start
-                *enumChoice = -1;
-                Game::load(xyzFile, charactersFile);
-                return;
-            } else if (*enumChoice == count) { // Cancel
-                *enumChoice = -1;
-                return;
-            } else {
-                cout << "Not a valid choice!\n\n";
-            }
-            count = 0;
-            for (auto i: allCharacters) {
-                cout << count << ". " << i << "\n"; 
-            }
-            cout << count++ << ". Start\n" << count << ". Cancel\nEnter: ";
-        } 
-    }  
+    // Will need to drop this into an Itr, along with another function.
+    int choice = Game::choice(allCharacters, print, count);
+    if (choice < count - 1) { // Character Select
+        string name = characters[cap(allCharacters[*enumChoice])];
+        charactersFile[name];
+        print = "Which team? (e.g. 0, 1)\nEnter: ";
+        choice = Game::choice({}, print, -1);
+        charactersFile[name]["team"] = choice;
+    } else if (choice == count - 1) { // Start
+        *enumChoice = -1;
+        Game::load(xyzFile, charactersFile);
+        return;
+    } else if (choice == count) return; // Cancel 
 }
 
 void Game::resumeGame() {
@@ -735,80 +514,52 @@ void Game::singleplayerSelection() {
     ifstream saveIfs(".json/save.json");
     json save = json::parse(saveIfs);
     vector<string> allChoices = { "new", "resume", "cancel" };
-    cout << "\n0. New\n1. Resume\n2. Cancel\nEnter: ";
+    string print = "\n0. New\n1. Resume\n2. Cancel\nEnter: ";
 
-    Game::choiceReset();
-    while (true) {
-        Game::convertInput(allChoices);
-        if (*enumChoice != -1) {
-            switch(*enumChoice) {
-                case 0: // New
-                    *enumChoice = -1;
-                    Game::newGame();
-                    if (*exit) return;
-                    break;
-                case 1: // Resume
-                    if (!save["file"]) {
-                        cout << "No save file found!\n\n";
-                        *enumChoice = -1;
-                        break;
-                    } else {
-                        *enumChoice = -1;
-                        Game::resumeGame();
-                        if (*exit) return;
-                        break;
-                    }
-                case 2: // Cancel
-                    *enumChoice = -1;
-                    return;
-                default:
-                    *enumChoice = -1;
-                    cout << "Not a valid choice!\n\n";
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    switch(choice) {
+        case 0: // New
+            Game::newGame();
+            if (*exit) return;
+            break;
+        case 1: // Resume
+            if (!save["file"]) {
+                cout << "No save file found!\n\n";
+                break;
+            } else {
+                Game::resumeGame();
+                if (*exit) return;
+                break;
             }
-            cout << "0. New\n1. Resume\n2. Cancel\nEnter: ";
-        }
+        case 2: return; // Cancel
     }
 }
 
 void Game::menu() {
+    int choice;
     vector<string> allChoices = {"new", "resume", "options",
                                  "manual", "exit" };
-    string menuStr = "\n0. Singleplayer\n1. Multiplayer\n2. Options\n3. Manual"
-                     "\n4. Exit\nEnter: ";
-    cout << menuStr;
-
-    Game::choiceReset();
-
+    string print = "\n0. Singleplayer\n1. Multiplayer\n2. Options\n3. Manual\n4. Exit\nEnter: ";
+    
     while (true) {
-        Game::convertInput(allChoices);
-        if (*enumChoice != -1) {
-            switch (*enumChoice) {
-            case 0: // Singleplayer
-                *enumChoice = -1;
-                Game::singleplayerSelection();
-                if (*exit) return;
-                break;
-            case 1: // Multiplayer
-                cout << "Currently unavailable!\n";
-                *enumChoice = -1;
-                break;
-            case 2: // Options
-                *enumChoice = -1;
-                Game::options();
-                break;
-            case 3: // Manual
-                *enumChoice = -1;
-                Game::manual();
-                break;
-            case 4: // Exit
-                *exit = true;
-                *enumChoice = -1;
-                return;
-            default:
-                *enumChoice = -1;
-                cout << "Input not in range (e.g. 0-3)!\n";
-            }
-            cout << menuStr;
+        choice = Game::choice(allChoices, print, allChoices.size()-1);
+        switch (choice) {
+        case 0: // Singleplayer
+            Game::singleplayerSelection();
+            if (*exit) return;
+            break;
+        case 1: // Multiplayer
+            cout << "Currently unavailable!\n";
+            break;
+        case 2: // Options
+            Game::options();
+            break;
+        case 3: // Manual
+            Game::manual();
+            break;
+        case 4: // Exit
+            *exit = true;
+            return;
         }
     }
 }

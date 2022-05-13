@@ -2,8 +2,8 @@
 #define XYZ_H
 #pragma once
 
-#include "json.hpp"
 #include "Room.h"
+#include "json.hpp"
 #include <vector>
 
 class XYZ

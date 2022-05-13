@@ -1,6 +1,6 @@
 #include "../.hpp/json.hpp"
-#include "../.hpp/XYZ.h"
 #include "../.hpp/Room.h"
+#include "../.hpp/XYZ.h"
 #include <iostream>
 #include <fstream>
 #include <vector>

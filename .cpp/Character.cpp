@@ -132,27 +132,19 @@ void Character::move(string room, string part, vector<int> coords,
     return;
 }
 
-vector<string> Character::possibleActions() {
-    vector<string> actions;
-
-    if (moveFlag) actions.push_back("Move");
-    if (lookFlag) actions.push_back("Look");
-    if (ableFlag) actions.push_back("Use");
-    actions.push_back("Print");
-    actions.push_back("Automate");
-    actions.push_back("Wait");
-    actions.push_back("Manual");
-    actions.push_back("Options");
-    actions.push_back("Save");
-    actions.push_back("Exit");
-
-    return actions;
-}
-
 void Character::look(XYZ xyz) {
-    vector<string> connect = xyz.listRooms()[*location]["connect"];
-    cout << "\nLooking...\nRooms:\n";
-    for (auto s : connect) {
-        cout << s << "\n";
+    json room = xyz.listRooms()[*location];
+    json connect = room[*point]["connect"];
+    cout << "\nLooking...\n\nRooms:\n";
+    for (auto room: connect.items()) {
+        cout << "  " << room.key() << ": ";
+        for (auto part: room.value()) {
+            cout << part << " ";
+        }
+        cout << "\n";
+    }
+    cout << "Items:\n";
+    for (auto item: room["items"].items()) {
+        cout << "  " << item.key() << "\n";
     }
 }

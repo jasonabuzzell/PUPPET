@@ -12,12 +12,10 @@ class Game
 {
     public:
         Game();
-        void convertInput(nlohmann::json allChoices);
-        void convertStrInt();
-        void choiceReset();
         void getInput();
         int *getTime();
         int *getTimer();
+        int choice(std::vector<std::string> allChoices, std::string print, int count);
         void exitCheck();
         void print(std::string key, int value);
         void printingInner(Character zero, nlohmann::json catalog);
