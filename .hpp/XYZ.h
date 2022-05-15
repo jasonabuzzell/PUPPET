@@ -2,8 +2,8 @@
 #define XYZ_H
 #pragma once
 
-#include "Room.h"
 #include "json.hpp"
+#include <string>
 #include <vector>
 
 class XYZ
@@ -13,7 +13,8 @@ class XYZ
         int getConfig();
         void setConfig(int state);
         nlohmann::json listRooms();
-
+        void removeItem(std::string room, std::string item);
+        std::vector<std::string> getItems(std::string location);
     private:
         int config;
 };

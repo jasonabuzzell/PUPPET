@@ -25,5 +25,6 @@ Strint printJson(nlohmann::json dict);
 std::string printJsonRepeat(nlohmann::json dict, std::string *print, int itr);
 Strint printJsonAll(nlohmann::json dict);
 void update(std::string link, nlohmann::json file);
+std::vector<float> vecIntToFloat(std::vector<int> vecInt); 
 
 #endif

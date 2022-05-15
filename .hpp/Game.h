@@ -25,7 +25,7 @@ class Game
         void manualInner(int choice, std::ifstream *readme);
         void manual();
         void moving(XYZ xyz, Character zero);
-        void use(XYZ xyz, Character zero);
+        void interact(XYZ xyz, Character zero);
         void waiting();
         void singleplayerSelection();
         void save(XYZ xyz, std::vector<Character> characters);

@@ -1,6 +1,7 @@
 #include "../.hpp/Character.h"
 #include "../.hpp/XYZ.h"
 #include "../.hpp/json.hpp"
+#include "../.hpp/Helper.h"
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -13,9 +14,10 @@ using namespace nlohmann;
 // CHARACTER
 // ---------------------------------------------------------
 
-Character::Character(XYZ xyz, string place, string part)
+Character::Character(XYZ xyz, string title, string place, string part)
     : location(new string(place)),
       point(new string(part)),
+      name(title),
       x(new float(0.0)),
       y(new float(0.0)),
       z(new float(0.0)),
@@ -27,6 +29,10 @@ Character::Character(XYZ xyz, string place, string part)
     *x = coords[0];
     *y = coords[1];
     *z = coords[2];
+}
+
+string Character::getName() {
+    return name;
 }
 
 void Character::setLocation(string loc) {
@@ -57,8 +63,8 @@ float *Character::getZ() {
     return z;
 }
 
-vector<string> Character::getInventory() {
-    return inventory;
+vector<float> Character::getCoords() {
+    return { *x, *y, *z };
 }
 
 bool Character::getMoveFlag() {
@@ -80,6 +86,17 @@ void Character::printActions(XYZ xyz, vector<string> actions) {
     cout << "Enter: ";
 }
 
+json Character::distanceTime(vector<float> a, vector<float> b) {
+    json movement;
+    // Very demanding equation, might want to consider alternatives.
+    int hypo = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
+    int dist = round(sqrt(hypo + pow(b[2]- a[2], 2))); 
+    movement["Walking"] = dist; // like 1m/s.
+    movement["Crouching"] = dist * 3;
+    movement["Running"] = static_cast<int>(round(float(dist) / 3));
+    return movement;
+}
+
 json Character::possibleMoves(XYZ xyz) {
     json moves;
     json rooms = xyz.listRooms();
@@ -90,12 +107,10 @@ json Character::possibleMoves(XYZ xyz) {
         for (auto point: room.value()) { 
             vector<int> b = rooms[room.key()][point]["coords"];
             moves[room.key()][point] = {};
-            // Uses sqrt() twice!
-            int hypo = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
-            int dist = round(sqrt(hypo + pow(b[2]- a[2], 2))); 
-            moves[room.key()][point]["Walking"] = dist; // like 1m/s.
-            moves[room.key()][point]["Crouching"] = dist * 3;
-            moves[room.key()][point]["Running"] = static_cast<int>(round(float(dist) / 3));
+            json movement = Character::distanceTime(vecIntToFloat(a), vecIntToFloat(b));
+            moves[room.key()][point]["Walking"] = movement["Walking"];
+            moves[room.key()][point]["Crouching"] = movement["Crouching"];
+            moves[room.key()][point]["Running"] = movement["Running"];
         }
     }
     return moves;
@@ -109,7 +124,7 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
     cout << "Enter: ";
 }
 
-void Character::move(string room, string part, vector<int> coords, 
+void Character::move(string room, string part, vector<float> coords, 
                     int expTime, int *time) 
 {
     float startX = *x;
@@ -143,8 +158,12 @@ void Character::look(XYZ xyz) {
         }
         cout << "\n";
     }
-    cout << "Items:\n";
-    for (auto item: room["items"].items()) {
-        cout << "  " << item.key() << "\n";
+    cout << "Items:\n" + *location + ": \n";
+    for (auto item: xyz.getItems(*location)) {
+        cout << "  " << item << "\n";
+    }
+    cout << name << ": \n";
+    for (auto item: xyz.getItems(name)) {
+        cout << "  " << item << "\n";
     }
 }

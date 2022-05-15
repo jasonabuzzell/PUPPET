@@ -80,7 +80,6 @@ Strint printJson(json dict) {
 }
 
 string printJsonRepeat(json dict, string print, int itr) {
-    cout << dict.dump() << "\n";
     for (auto i: dict.items()) {
         print += "\n";
         for (int i = 0; i < itr; i++) {
@@ -117,3 +116,12 @@ void update(string link, json file) {
     ofs << file;
     ofs.close();
 }
+
+vector<float> vecIntToFloat(vector<int> vecInt) {
+    vector<float> vecFloat;
+    for (auto i: vecInt) {
+        vecFloat.push_back(float(i));
+    }
+    return vecFloat;
+}
+
