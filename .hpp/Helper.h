@@ -11,7 +11,9 @@ class Strint
     public:
         Strint(std::string a, int b);
         int getInt();
+        void setInt(int b);
         std::string getStr();
+        void setStr(std::string a);
     private:
         int Int;
         std::string String;

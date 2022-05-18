@@ -1,4 +1,6 @@
 #include "../.hpp/Game.h"
+#include "../.hpp/glad.h"
+#include "../.hpp/glfw3.h"
 #include <iostream>
 #include <string>
 #include <thread>

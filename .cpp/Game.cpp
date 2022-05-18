@@ -4,9 +4,12 @@
 #include "../.hpp/Item.h"
 #include "../.hpp/Helper.h"
 #include "../.hpp/json.hpp"
+#include "../.hpp/glad.h"
+#include "../.hpp/glfw3.h"
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <windows.h>
 
 using namespace std;
@@ -17,7 +20,8 @@ Game::Game()
       enumChoice(new int(-1)),
       strChoice(new string("")),
       inputType(new string("")),
-      exit(new bool(false)) {
+      exit(new bool(false)) 
+{
     cout << "LOADING: [puppet] ... \n";
     "----------------------------\n\n";
 
@@ -101,51 +105,206 @@ int Game::choice(vector<string> allChoices, string print, int count=0) {
     }
 }
 
-json Game::optionsInputType(json options) {
-    vector<string> allInputs = {"enumeration", "string", "cancel"};
-    string print = "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
-                   "2. Cancel\nEnter: ";
-
-    int choice = Game::choice(allInputs, print, allInputs.size());
-    switch (choice) {
-    case 0: // Enumerator
-        *inputType = "Enumeration";
-        options["Input Type"] = "Enumeration";
-        break;
-    case 1: // String
-        *inputType = "String";
-        options["Input Type"] = "String";
-        break;
-    case 2: return options; // Cancel  
+void Game::moving(XYZ xyz, Character chara) {
+    json moves = chara.possibleMoves(xyz);
+    vector<string> allMoves, allPoints, allMovement;
+    for (auto i : moves.items()) {
+        allMoves.push_back(decap(i.key()));
     }
+    Strint strint = printJson(moves);
 
-    ofstream ofs(".json/options.json");
-    ofs << options;
-    ofs.close();
+    int choice = Game::choice(allMoves, strint.getStr(), strint.getInt());
+    if (choice < strint.getInt()) {
+        string room = cap(allMoves[choice]);
+        json roomChoice = moves[room];
+        strint = printJsonAll(roomChoice);
+        for (auto i: roomChoice.items()) {
+            allPoints.push_back(decap(i.key()));
+        }
 
-    return options;
+        choice = Game::choice(allPoints, strint.getStr(), strint.getInt());
+        if (choice < strint.getInt()) {
+            string point = cap(allPoints[choice]);
+            json pointChoice = roomChoice[point];
+            vector<float> coords = xyz.listRooms()[room][point]["coords"];
+            strint = printJson(pointChoice);
+            for (auto i: pointChoice.items()) {
+                allMovement.push_back(decap(i.key()));
+            }
+            choice = Game::choice(allMovement, strint.getStr(), strint.getInt());
+            if (choice < strint.getInt()) {
+                string movement = cap(allMovement[choice]);
+                int expTime = pointChoice[movement];
+                cout << "\n" << movement << "...\n";
+                chara.move(room, point, coords, expTime, time);
+                return; 
+            }
+        }
+    } 
+    if (choice == strint.getInt()) return;
 }
 
-void Game::options() {
-    int choice;
-    Strint strint("", -1);
-    vector<string> allOptions = { "input type", "cancel" };
+void Game::interact(XYZ xyz, Character chara) {
+    int roomCount, invCount, choice;
+    string itemName;
+    vector<string> allItems, allMovement;
+    vector<string> roomItems = xyz.getItems(*chara.getLocation());
+    vector<string> inventory = xyz.getItems(chara.getName());
+    vector<string> allUses = { "use", "drop", "trade" };
+    string print = "\nUSE: \n\n" + *chara.getLocation() + ":\n";
+    allItems = {};
+    roomCount = 0;
 
-    cout << "\nOPTIONS:\n";
-    ifstream ifs(".json/options.json");
-    json options = json::parse(ifs);
+    for (auto i: roomItems) {
+        print += "  " + to_string(roomCount++) + ". " + i + "\n";
+        allItems.push_back(decap(i));
+    }
+    invCount = roomCount;
+    print += "Inventory: \n";
+    for (auto j: inventory) {
+        print += "  " + to_string(invCount++) + ". " + j + "\n";
+        allItems.push_back(decap(j));
+    }
+    print += "\n" + to_string(invCount) + ". Cancel\nEnter: ";
+    
+    while (true) {
+        choice = Game::choice(allItems, print, invCount);
+        if (choice < roomCount) { // item in room (take)
+            itemName = cap(allItems[choice]);
+            Item item(xyz, *chara.getLocation(), itemName, false);
+            json movement = chara.distanceTime(chara.getCoords(), item.getCoords(xyz, chara));
+            for (auto i: movement.items()) {
+                allMovement.push_back(decap(i.key()));
+            }
+            string printTwo = "\nTake " + itemName + " by:\n";
+            Strint strint = printJson(movement);
+            printTwo += strint.getStr();
+            choice = Game::choice(allMovement, printTwo, strint.getInt());
+            if (choice < strint.getInt()) {
+                chara.move(*chara.getLocation(), item.getPoint(), item.getCoords(xyz, chara), movement[cap(allMovement[choice])], time);
+                cout << "Taking " + itemName + "...\n";
+                Sleep(1000); // Standard 1-second take
+                (*time)++;
+                item.update(*chara.getLocation(), chara.getName(), "A", true);
+                return;
+            } // Cancel just goes through the loop again
+        } else if (choice < invCount) { // item in inventory (use/drop)
+            itemName = cap(allItems[choice]);
+            Item item(xyz, chara.getName(), itemName, true);
+            string printTwo = "0. Use\n1. Drop\n2. Trade\n3. Cancel\nEnter: "; 
+            choice = Game::choice(allUses, printTwo, allUses.size());
+            switch (choice) {
+                case 0: // Use
+                    item.selector();
+                    return;
+                case 1: // Drop
+                    cout << "Dropping " + itemName + "...\n";
+                    item.update(chara.getName(), *chara.getLocation(), *chara.getPoint(), false);
+                    Sleep(1000);
+                    return;
+                case 2: // Trade
+                    cout << "Not available in singleplayer!\n";
+                    break;
+                case 3: break; // Cancel
+            }
+        } else if (choice == invCount) return; // Cancel
+    }
+}
+
+// Running at O(4i), fix this.
+Strint Game::printingInner(json catalog) {
+    int choice;
+    vector<string> allItems, capItems;
+    Strint strint("", 0);
+
+    for (auto i : catalog.items()) {
+        allItems.push_back(decap(i.key()));
+        capItems.push_back(i.key()); // forced to do this to access.
+    }
+    strint = printJson(catalog); // O(2i): Double for-loop.
+    while (true) {
+        choice = Game::choice(allItems, strint.getStr(), strint.getInt());
+        if (choice < strint.getInt()) {
+            string key = capItems[choice];
+            auto value = catalog[key];
+            if (value.is_number()) {
+                strint.setStr(key);
+                strint.setInt(value);
+                return strint;
+            } else { 
+                strint = Game::printingInner(value);
+                if (strint.getInt() != 0) return strint;
+            }
+        } else if (choice == strint.getInt()) return strint; // Back
+    }
+}
+
+void Game::print(Character chara, json actions, Strint strint, string room) {
+    cout << "Sent " << strint.getStr() << " to print...\n";
+    cout << "Actions: " << actions.dump() << "\n";
+    actions[chara.getName()]["Print"][room]["Object"] = strint.getStr();
+    actions[chara.getName()]["Print"][room]["Time"] = strint.getInt();
+
+    ofstream ofs(".json/actions.json");
+    ofs << actions;
+    ofs.close();
+}
+
+void Game::printing(Character chara) {
+    cout << "\n\nPRINT:\n";
+
+    ifstream ifs(".json/items.json");
+    json catalog = json::parse(ifs)["Catalog"];
     ifs.close();
 
-    while (true) {
-        strint = printJson(options);
-        choice = Game::choice(allOptions, strint.getStr(), strint.getInt());
-        switch (choice) {
-        case 0: // inputType
-            options = Game::optionsInputType(options);
-            break;
-        case 1: return; // Back
-        }
+    Strint strint = Game::printingInner(catalog);
+    if (strint.getInt() == 0) return;
+    vector<string> allRooms = {"Printer Room 1", "Printer Room 2", "Cancel"};
+    string print = "\nSend " + strint.getStr() + " to print where?\n";
+    for (int i = 0; i < allRooms.size(); i++) {
+        print += to_string(i) + ". " + allRooms[i] + "\n";
     }
+    print += "Enter: ";
+    int choice = Game::choice(allRooms, print, allRooms.size());
+    if (choice < allRooms.size()) {
+        ifstream ifs(".json/actions.json");
+        json actions = json::parse(ifs);
+        ifs.close();
+        if (!actions[chara.getName()].contains("Print")) actions[chara.getName()]["Print"] = json({});
+        json prints = actions[chara.getName()]["Print"]; 
+        if (prints.contains(allRooms[choice])) {
+            vector<string> allChoices = { "yes", "no" };
+            string object = prints[allRooms[choice]]["Object"];
+            print = object + " is already printing, cancel this job?\n0. Yes\n1. No\nEnter: ";
+            int confirm = Game::choice(allChoices, print, allChoices.size());
+            if (confirm < allChoices.size()) {
+                Game::print(chara, actions, strint, allRooms[choice]);
+                return;
+            } else if (confirm == allChoices.size()) return;
+        } else {
+            Game::print(chara, actions, strint, allRooms[choice]);
+            return;
+        }
+    } else if (choice == allRooms.size()) return; // Cancel
+}
+
+void Game::automate() {
+
+}
+
+void Game::waiting() {
+    string print = "\nWait for how long?\nEnter: ";
+
+    int choice = Game::choice({}, print);
+    cout << "\nWaiting for " << choice << " seconds...\n";
+    for (int i = 1; i <= choice; i++) {
+        Sleep(1000);
+        (*time)++;
+        if (i == 1) cout << i << " second...\n";
+        else cout << i << " seconds...\n";
+    }
+
+    return;
 }
 
 void Game::manualInner(int choose, ifstream *readme) {
@@ -204,186 +363,51 @@ void Game::manual() {
     }
 }
 
-void Game::moving(XYZ xyz, Character zero) {
-    json moves = zero.possibleMoves(xyz);
-    vector<string> allMoves, allPoints, allMovement;
-    for (auto i : moves.items()) {
-        allMoves.push_back(decap(i.key()));
-    }
-    Strint strint = printJson(moves);
+json Game::optionsInputType(json options) {
+    vector<string> allInputs = {"enumeration", "string", "cancel"};
+    string print = "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
+                   "2. Cancel\nEnter: ";
 
-    int choice = Game::choice(allMoves, strint.getStr(), strint.getInt());
-    if (choice < strint.getInt()) {
-        string room = cap(allMoves[choice]);
-        json roomChoice = moves[room];
-        strint = printJsonAll(roomChoice);
-        for (auto i: roomChoice.items()) {
-            allPoints.push_back(decap(i.key()));
-        }
-
-        choice = Game::choice(allPoints, strint.getStr(), strint.getInt());
-        if (choice < strint.getInt()) {
-            string point = cap(allPoints[choice]);
-            json pointChoice = roomChoice[point];
-            vector<float> coords = xyz.listRooms()[room][point]["coords"];
-            strint = printJson(pointChoice);
-            for (auto i: pointChoice.items()) {
-                allMovement.push_back(decap(i.key()));
-            }
-            choice = Game::choice(allMovement, strint.getStr(), strint.getInt());
-            if (choice < strint.getInt()) {
-                string movement = cap(allMovement[choice]);
-                int expTime = pointChoice[movement];
-                cout << "\n" << movement << "...\n";
-                zero.move(room, point, coords, expTime, time);
-                return; 
-            }
-        }
-    } 
-    if (choice == strint.getInt()) return;
-}
-
-// Needs more work.
-void Game::interact(XYZ xyz, Character zero) {
-    int roomCount, invCount, choice;
-    string itemName;
-    vector<string> allItems, allMovement;
-    vector<string> roomItems = xyz.getItems(*zero.getLocation());
-    vector<string> inventory = xyz.getItems(zero.getName());
-    vector<string> allUses = { "use", "drop", "trade" };
-    string print = "\nUSE: \n\n" + *zero.getLocation() + ":\n";
-    allItems = {};
-    roomCount = 0;
-
-    for (auto i: roomItems) {
-        print += "  " + to_string(roomCount++) + ". " + i + "\n";
-        allItems.push_back(decap(i));
-    }
-    invCount = roomCount;
-    print += "Inventory: \n";
-    for (auto j: inventory) {
-        print += "  " + to_string(invCount++) + ". " + j + "\n";
-        allItems.push_back(decap(j));
-    }
-    print += "\n" + to_string(invCount) + ". Cancel\nEnter: ";
-    
-    while (true) {
-        choice = Game::choice(allItems, print, invCount);
-        if (choice < roomCount) { // item in room (take)
-            itemName = cap(allItems[choice]);
-            Item item(xyz, *zero.getLocation(), itemName, false);
-            json movement = zero.distanceTime(zero.getCoords(), item.getCoords(xyz, zero));
-            for (auto i: movement.items()) {
-                allMovement.push_back(decap(i.key()));
-            }
-            string printTwo = "\nTake " + itemName + " by:\n";
-            Strint strint = printJson(movement);
-            printTwo += strint.getStr();
-            choice = Game::choice(allMovement, printTwo, strint.getInt());
-            if (choice < strint.getInt()) {
-                zero.move(*zero.getLocation(), item.getPoint(), item.getCoords(xyz, zero), movement[cap(allMovement[choice])], time);
-                cout << "Taking " + itemName + "...\n";
-                Sleep(1000); // Standard 1-second take
-                (*time)++;
-                item.update(*zero.getLocation(), zero.getName(), "A", true);
-                return;
-            } // Cancel just goes through the loop again
-        } else if (choice < invCount) { // item in inventory (use/drop)
-            itemName = cap(allItems[choice]);
-            Item item(xyz, zero.getName(), itemName, true);
-            string printTwo = "0. Use\n1. Drop\n2. Trade\n3. Cancel\nEnter: "; 
-            choice = Game::choice(allUses, printTwo, allUses.size());
-            switch (choice) {
-                case 0: // Use
-                    item.selector();
-                    return;
-                case 1: // Drop
-                    cout << "Dropping " + itemName + "...\n";
-                    item.update(zero.getName(), *zero.getLocation(), *zero.getPoint(), false);
-                    Sleep(1000);
-                    return;
-                case 2: // Trade
-                    cout << "Not available in singleplayer!\n";
-                    break;
-                case 3: break; // Cancel
-            }
-        } else if (choice == invCount) return; // Cancel
-    }
-}
-
-void Game::print(string key, int value) {
-    vector<string> allChoices = { "yes", "no" };
-    string print = "Send " + key + " to print for " + to_string(value) + 
-                   " seconds?\n\n0. Yes\n1. No\nEnter: ";
-    // Go from here.
-    int choice = Game::choice(allChoices, print, allChoices.size());
+    int choice = Game::choice(allInputs, print, allInputs.size());
     switch (choice) {
-    case 0: // Yes
-        allChoices = { "printer room 1", "printer room 2", 
-                        "printer room 3", "cancel" };
-        print = "Print where?\n0. Printer Room 1\n"
-                "1. Printer Room 2\n2. Printer Room\n"
-                "3. Cancel\nEnter: ";
-        choice = Game::choice(allChoices, print, allChoices.size());
-        switch (choice) {
-        case 0:
-        case 1:
-        case 2: 
-            // Send to correct print room printer.
-            return;
-        case 3: return; // Cancel
-        }
-    case 1: return; // No
+    case 0: // Enumerator
+        *inputType = "Enumeration";
+        options["Input Type"] = "Enumeration";
+        break;
+    case 1: // String
+        *inputType = "String";
+        options["Input Type"] = "String";
+        break;
+    case 2: return options; // Cancel  
     }
+
+    ofstream ofs(".json/options.json");
+    ofs << options;
+    ofs.close();
+
+    return options;
 }
 
-// Running at O(4i), fix this.
-void Game::printingInner(Character zero, json catalog) {
+void Game::options() {
     int choice;
-    vector<string> allItems;
-    vector<string> capItems;
+    Strint strint("", -1);
+    vector<string> allOptions = { "input type", "cancel" };
 
-    for (auto i : catalog.items()) {
-        allItems.push_back(decap(i.key()));
-        capItems.push_back(i.key()); // forced to do this to access.
-    }
-    Strint strint = printJson(catalog); // O(2i): Double for-loop.
-    while (true) {
-        choice = Game::choice(allItems, strint.getStr(), strint.getInt());
-        if (choice < strint.getInt()) {
-            string key = capItems[choice];
-            auto value = catalog[key];
-            if (value.is_number()) Game::print(key, value);
-            else Game::printingInner(zero, value);
-        } else if (choice == strint.getInt()) return; // Back
-    }
-}
-
-void Game::printing(Character zero) {
-    vector<string> allActions = {"tools", "weapons", "cancel" };
-
-    cout << "\n\nPRINT:\n";
-
-    ifstream ifs(".json/items.json");
-    json catalog = json::parse(ifs);
+    cout << "\nOPTIONS:\n";
+    ifstream ifs(".json/options.json");
+    json options = json::parse(ifs);
     ifs.close();
 
-    Game::printingInner(zero, catalog);
-}
-
-void Game::waiting() {
-    string print = "\nWait for how long?\nEnter: ";
-
-    int choice = Game::choice({}, print);
-    cout << "\nWaiting for " << choice << " seconds...\n";
-    for (int i = 1; i <= choice; i++) {
-        Sleep(1000);
-        (*time)++;
-        if (i == 1) cout << i << " second...\n";
-        else cout << i << " seconds...\n";
+    while (true) {
+        strint = printJson(options);
+        choice = Game::choice(allOptions, strint.getStr(), strint.getInt());
+        switch (choice) {
+        case 0: // inputType
+            options = Game::optionsInputType(options);
+            break;
+        case 1: return; // Back
+        }
     }
-
-    return;
 }
 
 void Game::save(XYZ xyz, vector<Character> characters) {
@@ -416,6 +440,7 @@ void Game::save(XYZ xyz, vector<Character> characters) {
     ifstream ifs(".json/items.json");
     json items = json::parse(ifs)["Location"];
     save["items"] = items;
+    ifs.close();
 
     save["file"] = true;
 
@@ -427,11 +452,75 @@ void Game::save(XYZ xyz, vector<Character> characters) {
     return;
 }
 
-// TO DO: Use (Attack?), Print, Automate, Hiding (in Move?)
-// Abstract the functions for any character.
+// Only activates when an active user decision is selected
+// (i.e. Move, Look, Wait, sometimes Interact)
+void Game::actions(XYZ xyz, Character chara) {
+    ifstream ifs(".json/actions.json");
+    json actions = json::parse(ifs);
+    ifs.close();
+
+    *enumChoice = -1;
+    *strChoice = "";
+    cout << "\nEnter anything to cancel action...";
+    while (true) {
+        if (*enumChoice != -1 || *strChoice != "") {
+            cout << "Cancelling action...\n";
+            return;
+        } 
+        if (actions[chara.getName()] != json({})) {
+            for (auto i: actions[chara.getName()].items()) {
+                if (i.key() == "Print") { // Passive
+                    json prints = actions[chara.getName()]["Print"];
+                    for (auto j: prints.items()) {
+                        string itemName = prints[j.key()]["Object"];
+                        int time = prints[j.key()]["Time"];
+                        if (time <= 0) {
+                            actions[chara.getName()]["Print"].erase(j.key());
+                            ifstream ifs(".json/items.json");
+                            json items = json::parse(ifs);
+                            ifs.close();
+                            if (!items["Location"].contains(j.key())) items["Location"][j.key()] = json({});
+                            items["Location"][j.key()][itemName] = "Printer";
+                            Item item(xyz, j.key(), itemName, false);
+
+                            ofstream ofs(".json/items.json");
+                            ofs << items;
+                            ofs.close();
+                        } else {
+                            actions[chara.getName()]["Print"][j.key()]["Time"] = --time;
+                        }
+                    }
+                }
+
+                if (i.key() == "Interact") { // Active / Passive
+
+                }
+
+                
+                if (i.key() == "Look") { // Active
+
+                } else if (i.key() == "Move") { // Active
+
+                } else if (i.key() == "Wait") { // Active
+
+                }
+            }
+        }
+        Sleep(1000);
+    }
+
+    ofstream ofs(".json/actions.json");
+    ofs << actions;
+    ofs.close();
+}
+
+// TO DO: Automate, Visibility (for hiding), 
+// Fix little issue where items can't be found after save (might think it's carried)
 // Add all rooms
+// Add all items and functionality
 // Add Characters and their logic
-// Add GUI (OpenGL).
+// Add GUI (OpenGL)
+// Add Audio (Wwise?)
 void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
     int choice;
     string print;
@@ -448,20 +537,25 @@ void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
         switch (choice) {
         case 0: // Move
             Game::moving(xyz, zero);
+            Game::actions(xyz, zero);
             break;
         case 1: // Look (Add items, characters)
             zero.look(xyz);
+            Game::actions(xyz, zero);
             break;
-        case 2: // Interact (Need to do)
+        case 2: // Interact
             Game::interact(xyz, zero);
+            Game::actions(xyz, zero);
             break;
-        case 3: // Printing (Make and call printer item)
+        case 3: // Printing
             Game::printing(zero);
             break;
         case 4: // Automate (Need to do)
+            Game::automate();
             break;
         case 5: // Wait
             Game::waiting();
+            Game::actions(xyz, zero);
             break;
         case 6: // Manual
             Game::manual();
@@ -489,6 +583,7 @@ void Game::load(json xyzFile, json charactersFile) {
         xyz.setConfig(xyzFile["config"]);
     }
 
+    // Characters
     if (!charactersFile.empty()) {
         for (auto i: charactersFile.items()) {
             json characterFile = charactersFile[i.key()];
@@ -507,10 +602,30 @@ void Game::load(json xyzFile, json charactersFile) {
 void Game::newGame() {
     json xyzFile;
     json charactersFile;
-    string print;
-    ifstream ifs(".json/characters.json");
-    json characters = json::parse(ifs);
     vector<string> allCharacters;
+    string print;
+
+    ifstream ifsc(".json/characters.json");
+    json characters = json::parse(ifsc);
+    ifsc.close();
+    ifstream ifsi(".json/items.json");
+    json items = json::parse(ifsi);
+    ifsi.close();
+    ifstream ifsa(".json/actions.json");
+    json actions = json::parse(ifsa);
+    ifsa.close();
+
+    // Actions handler
+    actions = json({});
+    ofstream ofsa(".json/actions.json");
+    ofsa << actions;
+    ofsa.close();
+
+    // Items handler
+    items["Location"] = items["Spawn"];
+    ofstream ofsi(".json/items.json");
+    ofsi << items;
+    ofsi.close();
 
     int count = 0;
     for (auto i: characters.items()) {
@@ -543,8 +658,19 @@ void Game::newGame() {
 }
 
 void Game::resumeGame() {
-    ifstream ifs(".json/save.json");
-    json save = json::parse(ifs);
+    ifstream ifss(".json/save.json");
+    json save = json::parse(ifss);
+    ifss.close();
+    ifstream ifsi(".json/items.json");
+    json items = json::parse(ifsi);
+    ifsi.close();
+
+    // Item Handler
+    items["Location"] = save["items"];
+    ofstream ofsi(".json/items.json");
+    ofsi << items;
+    ofsi.close();
+
     json xyzFile = save["xyz"];
     json charactersFile;
     for (auto i: save["characters"].items()) {
@@ -581,6 +707,7 @@ void Game::singleplayerSelection() {
     }
 }
 
+// Need to add all Game threads.
 void Game::menu() {
     int choice;
     vector<string> allChoices = {"new", "resume", "options",

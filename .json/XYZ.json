@@ -5,26 +5,30 @@
                 "coords": [0, 0, 0],
                 "connect": {
                     "Start 0": ["B", "C", "D"]
-                }
+                },
+                "visible": 1
             },
             "B": {
                 "coords": [0, 7, 0],
                 "connect": {
                     "Start 0": ["A", "C", "D"],
                     "Room 1": ["A"]
-                }
+                },
+                "visible": 1
             }, 
             "C": {
                 "coords": [1, 3, 0],
                 "connect": {
                     "Start 0": ["A", "B", "D"]
-                }
+                },
+                "visible": 0.7
             },
             "D": {
                 "coords": [-3, 4, 0],
                 "connect": {
                     "Start 0": ["A", "B", "C"]
-                }
+                },
+                "visible": 0.5
             }
         },
         "Room 1": {

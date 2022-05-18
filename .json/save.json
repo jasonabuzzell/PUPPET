@@ -1,33 +1,39 @@
 {
     "characters": {
         "one": {
-            "ableFlag":true,
-            "inventory":[],
-            "location":"Start 1",
-            "lookFlag":true,
-            "moveFlag":true,
-            "point":"B",
-            "x":20.0,
-            "y":86.0,
-            "z":0.0
+            "ableFlag": true,
+            "location": "Start 1",
+            "lookFlag": true,
+            "moveFlag": true,
+            "name": "1",
+            "point": "B",
+            "x": 20.0,
+            "y": 86.0,
+            "z": 0.0
         },
         "zero": {
-            "ableFlag":true,
-            "inventory":[],
-            "location":"Start 0",
-            "lookFlag":true,
-            "moveFlag":true,
-            "point":"A",
-            "x":0.0,
-            "y":0.0,
-            "z":0.0
-            }
-        },
-    "file":true,
-    "xyz": {
-        "config":0
+            "ableFlag": true,
+            "location": "Start 0",
+            "lookFlag": true,
+            "moveFlag": true,
+            "name": "0",
+            "point": "D",
+            "x": -3.0,
+            "y": 4.0,
+            "z": 0.0
+        }
     },
+    "file": true,
     "items": {
-        
+        "0": {},
+        "Passage 1": {
+            "Map": "B"
+        },
+        "Start 0": {
+            "Phone": "C"
+        }
+    },
+    "xyz": {
+        "config": 0
     }
 }

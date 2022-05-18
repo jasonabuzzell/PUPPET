@@ -17,10 +17,17 @@ int Strint::getInt() {
     return Int;
 }
 
+void Strint::setInt(int b) {
+    Int = b;
+}
+
 string Strint::getStr() {
     return String;
 }
 
+void Strint::setStr(string a) {
+    String = a;
+}
 
 // HELPER FUNCTIONS
 // -------------------------------------------------------

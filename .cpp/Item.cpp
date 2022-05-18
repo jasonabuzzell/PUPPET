@@ -12,14 +12,10 @@ using namespace std;
 using namespace nlohmann;
 
 Item::Item(XYZ xyz, string roomName, string itemName, bool take)
-: onPerson(take)
+: onPerson(take), name(itemName)
 {
     ifstream ifs(".json/items.json");
     point = json::parse(ifs)["Location"][roomName][itemName];
-    for (auto i: coords) {
-        cout << "i: " << i << "\n";
-    }
-    name = itemName;
 }
 
 string Item::getPoint() {

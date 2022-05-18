@@ -8,7 +8,10 @@
 			"args": [
 				"-fdiagnostics-color=always",
 				"-g",
+				"-L./.a",
+				"${workspaceFolder}\\.cpp\\glad.c",
 				"${workspaceFolder}\\.cpp\\*.cpp",
+				"-lglfw3dll",
 				"-o",
 				"${workspaceFolder}\\puppet.exe",
 				"${workspaceFolder}\\.res\\xyz.res",
