@@ -28,5 +28,7 @@ std::string printJsonRepeat(nlohmann::json dict, std::string *print, int itr);
 Strint printJsonAll(nlohmann::json dict);
 void update(std::string link, nlohmann::json file);
 std::vector<float> vecIntToFloat(std::vector<int> vecInt); 
+std::string jsonListPrint(nlohmann::json dict);
+std::string listPrint(nlohmann::json dict);
 
 #endif

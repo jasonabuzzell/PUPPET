@@ -147,23 +147,28 @@ void Character::move(string room, string part, vector<float> coords,
     return;
 }
 
-void Character::look(XYZ xyz) {
+json Character::look(XYZ xyz, json actions) {
+    actions[name]["Look"] = json({});
+
+    actions[name]["Look"]["Rooms"] = json({});
+    actions[name]["Look"]["Rooms"]["Time"] = 4;
     json room = xyz.listRooms()[*location];
     json connect = room[*point]["connect"];
-    cout << "\nLooking...\n\nRooms:\n";
     for (auto room: connect.items()) {
-        cout << "  " << room.key() << ": ";
+        actions[name]["Look"]["Rooms"][room.key()] = {};
         for (auto part: room.value()) {
-            cout << part << " ";
+            actions[name]["Look"]["Rooms"][room.key()].push_back(part);
         }
-        cout << "\n";
     }
-    cout << "Items:\n" + *location + ": \n";
-    for (auto item: xyz.getItems(*location)) {
-        cout << "  " << item << "\n";
-    }
-    cout << name << ": \n";
-    for (auto item: xyz.getItems(name)) {
-        cout << "  " << item << "\n";
-    }
+
+    actions[name]["Look"]["Room Items"] = json({});
+    actions[name]["Look"]["Room Items"]["Time"] = 3;
+    actions[name]["Look"]["Room Items"]["Items"] = xyz.getItems(*location);
+    
+    actions[name]["Look"]["Inventory Items"] = json({});
+    actions[name]["Look"]["Inventory Items"]["Time"] = 2;
+    actions[name]["Look"]["Inventory Items"]["Items"] = xyz.getItems(name);
+
+    actions["Active"] = true;
+    return actions;
 }

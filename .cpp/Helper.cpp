@@ -132,3 +132,22 @@ vector<float> vecIntToFloat(vector<int> vecInt) {
     return vecFloat;
 }
 
+string listPrint(json dict) {
+    string print;
+
+    for (int i = 0; i < dict.size(); i++) {
+        print += dict[i];
+        if (i != dict.size() - 1) print += ", ";
+    }
+    print += "\n";
+
+    return print;
+}
+
+string jsonListPrint(json dict) {
+    string print = "";
+    for (auto i: dict.items()) {
+        print += "    " + i.key() + ": " + listPrint(dict[i.key()]);
+    }
+    return print;
+}

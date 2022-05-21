@@ -23,7 +23,7 @@ class Character
         bool getLookFlag();
         bool getAbleFlag();
         std::vector<std::string> possibleActions();
-        void look(XYZ xyz);
+        nlohmann::json look(XYZ xyz, nlohmann::json actions);
         void printActions(XYZ xyz, std::vector<std::string> actions);
         std::vector<std::string> allActions(XYZ xyz);
         nlohmann::json distanceTime(std::vector<float> a, std::vector<float> b);
