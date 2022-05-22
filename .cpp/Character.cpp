@@ -43,6 +43,12 @@ void Character::setPoint(string poi) {
     *point = poi;
 }
 
+void Character::setCoords(vector<float> coords) {
+    *x = coords[0];
+    *y = coords[1];
+    *z = coords[2];
+}
+
 string *Character::getLocation() {
     return location;
 }
@@ -100,14 +106,14 @@ json Character::distanceTime(vector<float> a, vector<float> b) {
 json Character::possibleMoves(XYZ xyz) {
     json moves;
     json rooms = xyz.listRooms();
-    vector<int> a = rooms[*location][*point]["coords"];
+    vector<float> a = rooms[*location][*point]["coords"];
     json connected = rooms[*location][*point]["connect"];
     for (auto room: connected.items()) {
         moves[room.key()] = {};
         for (auto point: room.value()) { 
-            vector<int> b = rooms[room.key()][point]["coords"];
+            vector<float> b = rooms[room.key()][point]["coords"];
             moves[room.key()][point] = {};
-            json movement = Character::distanceTime(vecIntToFloat(a), vecIntToFloat(b));
+            json movement = Character::distanceTime(a, b);
             moves[room.key()][point]["Walking"] = movement["Walking"];
             moves[room.key()][point]["Crouching"] = movement["Crouching"];
             moves[room.key()][point]["Running"] = movement["Running"];
@@ -124,27 +130,15 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
     cout << "Enter: ";
 }
 
-void Character::move(string room, string part, vector<float> coords, 
-                    int expTime, int *time) 
+void Character::move(vector<float> curCoords, vector<float> expCoords, int curTime, int expTime) 
 {
-    float startX = *x;
-    float startY = *y;
-    float startZ = *z;
-    for (int i = 0; i < expTime; i++) {
-        cout << "Time: " << (*time)++; 
-        *x = (coords[0] - startX) * (i / float(expTime)) + startX;
-        *y = (coords[1] - startY) * (i / float(expTime)) + startY;
-        *z = (coords[2] - startZ) * (i / float(expTime)) + startZ;
-        cout << " X: " << setprecision(2) << *x << " Y: " 
-             << *y << " Z: " << *z << "\n";
-        Sleep(1000);
+    vector<float*> coords = { x, y, z };
+    float percentage = curTime / float(expTime);
+    for (int i = 0; i < coords.size(); i++) {
+        *coords[i] = (expCoords[i] - curCoords[i]) * percentage + curCoords[i];
     }
-    *x = coords[0];
-    *y = coords[1];
-    *z = coords[2];
-    *location = room;
-    *point = part;
-    return;
+    cout << " X: " << setprecision(2) << *x << " Y: " 
+            << *y << " Z: " << *z << "\n";
 }
 
 json Character::look(XYZ xyz, json actions) {

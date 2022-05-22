@@ -151,3 +151,18 @@ string jsonListPrint(json dict) {
     }
     return print;
 }
+
+string roundStr(float f) {
+    string fStr = to_string(f);
+    for (int i = 0; i < fStr.length(); i++) {
+        if (fStr[i] == '.') {
+            string print = fStr.substr(0, i);
+            if (fStr[i+1]) {
+                print + fStr[i+1];
+                if (fStr[i+2]) print + fStr[i+2];
+            }
+            return print;
+        }
+    }
+    return fStr;
+}

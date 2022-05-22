@@ -30,5 +30,6 @@ void update(std::string link, nlohmann::json file);
 std::vector<float> vecIntToFloat(std::vector<int> vecInt); 
 std::string jsonListPrint(nlohmann::json dict);
 std::string listPrint(nlohmann::json dict);
+std::string roundStr(float f);
 
 #endif

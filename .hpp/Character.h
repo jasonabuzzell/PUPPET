@@ -12,6 +12,7 @@ class Character
         Character(XYZ xyz, std::string title, std::string place, std::string part);
         void setLocation(std::string loc);
         void setPoint(std::string poi);
+        void setCoords(std::vector<float> coords);
         std::string getName();
         std::string *getLocation();
         std::string *getPoint();
@@ -29,8 +30,7 @@ class Character
         nlohmann::json distanceTime(std::vector<float> a, std::vector<float> b);
         nlohmann::json possibleMoves(XYZ xyz);
         void printMoves(XYZ xyz, std::vector<std::string> moves);
-        void move(std::string room, std::string point, 
-                  std::vector<float> coords, int expTime, int *time);
+        void move(std::vector<float> curCoords, std::vector<float> expCoords, int curTime, int expTime);
 
     private:
         std::string name;

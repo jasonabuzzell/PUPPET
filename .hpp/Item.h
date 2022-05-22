@@ -8,13 +8,16 @@
 #include <string>
 #include <vector>
 
+void addItem(std::string itemName, std::string room, std::string point);
+
 class Item {
 public:
-    Item(XYZ xyz, std::string roomName, std::string itemName, bool take);
+    Item(std::string roomName, std::string itemName, bool take);
     std::string getPoint();
     std::vector<float> getCoords(XYZ xyz, Character zero);
     std::string getName();
     void setPerson(bool take);
+    void add(std::string newRoom, std::string newPoint);
     void update(std::string oldRoom, std::string newRoom, std::string newPoint, bool take);
     void selector();
 
