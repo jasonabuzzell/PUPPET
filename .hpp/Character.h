@@ -10,6 +10,7 @@ class Character
 {
     public:
         Character(XYZ xyz, std::string title, std::string place, std::string part);
+        void setParameters(std::vector<std::string> position, std::vector<float> coords, std::vector<bool> flags);
         void setLocation(std::string loc);
         void setPoint(std::string poi);
         void setCoords(std::vector<float> coords);

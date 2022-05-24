@@ -20,7 +20,8 @@ Game::Game()
       enumChoice(new int(-1)),
       strChoice(new string("")),
       inputType(new string("")),
-      exit(new bool(false)) 
+      exit(new bool(false)),
+      autosave(true) 
 {
     cout << "LOADING: [puppet] ... \n";
     "----------------------------\n\n";
@@ -385,15 +386,38 @@ json Game::optionsInputType(json options) {
 
     int choice = Game::choice(allInputs, print, allInputs.size());
     switch (choice) {
-    case 0: // Enumerator
-        *inputType = "Enumeration";
-        options["Input Type"] = "Enumeration";
-        break;
-    case 1: // String
-        *inputType = "String";
-        options["Input Type"] = "String";
-        break;
-    case 2: return options; // Cancel  
+        case 0: // Enumerator
+            *inputType = "Enumeration";
+            options["Input Type"] = "Enumeration";
+            break;
+        case 1: // String
+            *inputType = "String";
+            options["Input Type"] = "String";
+            break;
+        case 2: return options; // Cancel  
+    }
+
+    ofstream ofs(".json/options.json");
+    ofs << options;
+    ofs.close();
+
+    return options;
+}
+
+json Game::optionsAutosave(json options) {
+    vector<string> allChoices = {"yes", "no"};
+    string print = "\nAUTOSAVE:\n\n0. Yes\n1. No\nEnter: ";
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    switch(choice) {
+        case 0: // Yes
+            autosave = true;
+            options["Autosave"] = "Yes";
+            break;
+        case 1:
+            autosave = false;
+            options["Autosave"] = "No";
+            break;
+        case 2: return options; // Cancel
     }
 
     ofstream ofs(".json/options.json");
@@ -406,7 +430,7 @@ json Game::optionsInputType(json options) {
 void Game::options() {
     int choice;
     Strint strint("", -1);
-    vector<string> allOptions = { "input type", "cancel" };
+    vector<string> allOptions = { "input type", "autosave" "cancel" };
 
     cout << "\nOPTIONS:\n";
     ifstream ifs(".json/options.json");
@@ -420,25 +444,32 @@ void Game::options() {
         case 0: // inputType
             options = Game::optionsInputType(options);
             break;
-        case 1: return; // Back
+        case 1: // Autosave
+            options = Game::optionsAutosave(options);
+            break;
+        case 2: return; // Back
         }
     }
 }
 
+// May be out of order
 void Game::save(XYZ xyz, vector<Character> characters) {
     string name;
-    vector<string> names = { "zero", "one", "two", "three", "four", "five" };
-    json save = {};
+    json charFile;
+    json save = json({});
+
+    // Game Save
+    save["time"] = *time;
+    save["autosave"] = save;
 
     // XYZ Save
     save["xyz"] = {};
     save["xyz"]["config"] = xyz.getConfig();
 
     // Characters Save
-    save["characters"] = {};
-    for (int i = 0; i < characters.size(); i++) {
-        json charFile = {};
-        Character character = characters[i];
+    save["characters"] = json({});
+    for (auto character: characters) {
+        charFile = json({});
         charFile["name"] = character.getName();
         charFile["location"] = *character.getLocation();
         charFile["point"] = *character.getPoint();
@@ -448,23 +479,19 @@ void Game::save(XYZ xyz, vector<Character> characters) {
         charFile["moveFlag"] = character.getMoveFlag();
         charFile["lookFlag"] = character.getLookFlag();
         charFile["ableFlag"] = character.getAbleFlag();
-        save["characters"][names[i]] = charFile;
+        save["characters"][character.getName()] = charFile;
     }
 
-    // Items Save
+    save["file"] = true;
     ifstream ifs(".json/items.json");
     json items = json::parse(ifs)["Location"];
     save["items"] = items;
     ifs.close();
-
-    save["file"] = true;
-
     ofstream ofs(".json/save.json");
     ofs << save;
     ofs.close();
 
-    cout << "\nSaved!\n\n";
-    return;
+    cout << "\nSaved!\n";
 }
 
 // This is essentially a World Clock system for properly correlating actions.
@@ -472,7 +499,7 @@ void Game::save(XYZ xyz, vector<Character> characters) {
 // (i.e. Move, Look, Wait, sometimes Interact)
 // Should also update character preferences.
 json Game::actions(XYZ xyz, Character chara, json actions) {
-    json charActions = actions[chara.getName()];
+    json charActions;
     int timer, wait;
     *enumChoice = -1;
     *strChoice = "";
@@ -486,6 +513,7 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
             return actions;
         } 
         actions["Active"] = false;
+        charActions = actions[chara.getName()];
 
         if (charActions.contains("Print")) { // Passive
             json printing = actions[chara.getName()]["Print"];
@@ -494,22 +522,26 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
             timer = printing["Time"];
             if (timer < 1) { // Adds item to XYZ
                 actions[chara.getName()].erase("Print");
-                addItem(itemName, room, "C"); // need to figure out where the printer is in the printer room.
+                addItem(itemName, room, "Printer");
             } else actions[chara.getName()]["Print"]["Time"] = --timer;
         }
 
         if (charActions.contains("Interact")) { // Active / Passive
             json interact = actions[chara.getName()]["Interact"];
-            Item item(*chara.getLocation(), interact["Item Name"], false);
+            string itemName = interact["Item Name"];
+            Item item(*chara.getLocation(), itemName, false);
             if (interact["Type"] == "Take") {
+                cout << "Taking " << itemName << "...\n";
                 if (!charActions.contains("Move")) { 
                     item.update(*chara.getLocation(), chara.getName(), "A", true);
                     actions[chara.getName()].erase("Interact");
                 } else actions["Active"] = true;
             } else if (interact["Type"] == "Drop") {
+                cout << "Dropping " << itemName << "...\n";
                 item.update(chara.getName(), *chara.getLocation(), *chara.getPoint(), false);
                 actions[chara.getName()].erase("Interact");
             } else if (interact["Type"] == "Use") {
+                cout << "Using " << itemName << "...\n";
                 // Have to add more to check item usage.
                 actions[chara.getName()].erase("Interact");
             }
@@ -553,7 +585,6 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
                 actions["Active"] = true;
                 actions[chara.getName()]["Move"] = move;
             }
-
         } 
         
         if (charActions.contains("Wait")) { // Active
@@ -572,16 +603,19 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
     return actions;
 }
 
-// TO DO: Automate, Visibility (for hiding), 
-// Fix little issue where items can't be found after save (might think it's carried)
+// TO DO: 
+// Visibility (for hiding)
 // Add all rooms
 // Add all items and functionality
-// Add Characters and their logic
+// Add Characters and their logic with automate().
 // Add GUI (OpenGL)
 // Add Audio (Wwise?)
-void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
+void Game::singlePlayer(json file) {
     int choice;
     string print;
+    XYZ xyz;
+    vector<Character> characters;
+    Character zero(xyz, "0", "Start 0", "A");
     json actions = json({});
     actions["Active"] = false;
     vector<string> allActions = {"move", "look", "interact",
@@ -589,11 +623,29 @@ void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
                                  "manual", "options", "save", "exit"};
     vector<int>::iterator itr;
     vector<string> strCoords;
-    Character zero = characters[0];
-    for (auto chara: characters) {
-        actions[chara.getName()] = json({});
+
+    // XYZ Handler
+    if (file.contains("xyz")) xyz.setConfig(file["xyz"]["config"]);
+
+    // Character Handler
+    if (file["characters"] == json({})) {
+        Character one(xyz, "1", "Start 1", "B");
+        characters.push_back(zero);
+        characters.push_back(one);
+    } else {
+        if (file["characters"].contains("0")) { // Update 0
+            json zeroFile = file["characters"]["0"];
+            vector<string> position = {zeroFile["location"], zeroFile["point"]};
+            vector<float> coords = {zeroFile["x"], zeroFile["y"], zeroFile["z"]};
+            vector<bool> flags = {zeroFile["moveFlag"], zeroFile["ableFlag"], zeroFile["lookFlag"]};
+            zero.setParameters(position, coords, flags);
+        }
+        for (auto chara: file["characters"]) {
+            characters.push_back(Character(xyz, chara["name"], chara["location"], chara["point"]));
+        }
     }
 
+    // Singleplayer Handler
     while (true) {
         strCoords = {};
         for (auto i: zero.getCoords()) {
@@ -636,41 +688,15 @@ void Game::singlePlayer(XYZ xyz, vector<Character> characters) {
             Game::save(xyz, characters);
             break;
         case 9: // Exit
+            if (autosave) Game::save(xyz, characters);
             *exit = true;
             return;
         }
     }
 }
 
-void Game::load(json xyzFile, json charactersFile) {
-    XYZ xyz;
-    vector<Character> characters;
-    string location, point;
-
-    // XYZ
-    if (!xyzFile.empty()) {
-        xyz.setConfig(xyzFile["config"]);
-    }
-
-    // Characters
-    if (!charactersFile.empty()) {
-        for (auto i: charactersFile.items()) {
-            json characterFile = charactersFile[i.key()];
-            characters.push_back(Character(xyz, characterFile["name"], characterFile["location"], characterFile["point"]));
-        }
-    } else {
-        characters.push_back(Character(xyz, "0", "Start 0", "A"));
-        characters.push_back(Character(xyz, "1", "Start 1", "B"));
-    }
-
-
-    Game::singlePlayer(xyz, characters);
-    return;
-}
-
 void Game::newGame() {
-    json xyzFile;
-    json charactersFile;
+    json file;
     vector<string> allCharacters;
     string print;
 
@@ -698,6 +724,7 @@ void Game::newGame() {
         print = "\nNo characters to select from...\n\n";
     }
     allCharacters.push_back("start");
+    file["characters"] = json({});
     print += to_string(count) + ". Start\n";
     print += to_string(++count) + ". Cancel\nEnter: ";
 
@@ -706,12 +733,12 @@ void Game::newGame() {
         int choice = Game::choice(allCharacters, print, count);
         if (choice < count - 1) { // Character Select
             string name = characters[cap(allCharacters[choice])];
-            charactersFile[name];
+            file["characters"][name] = json({});
             print = "Which team? (e.g. 0, 1)\nEnter: ";
             choice = Game::choice({}, print, -1);
-            charactersFile[name]["team"] = choice;
+            file["characters"][name]["team"] = choice;
         } else if (choice == count - 1) { // Start
-            Game::load(xyzFile, charactersFile);
+            Game::singlePlayer(file);
             return;
         } else if (choice == count) return; // Cancel 
     }
@@ -725,21 +752,17 @@ void Game::resumeGame() {
     json items = json::parse(ifsi);
     ifsi.close();
 
+    // Game Handler
+    *time = save["time"];
+    autosave = save["autosave"];
+
     // Item Handler
     items["Location"] = save["items"];
     ofstream ofsi(".json/items.json");
     ofsi << items;
     ofsi.close();
 
-    json xyzFile = save["xyz"];
-    json charactersFile;
-    for (auto i: save["characters"].items()) {
-        if (!i.value().empty()) {
-            charactersFile[i.key()] = i.value();
-        }
-    }  
-    Game::load(xyzFile, charactersFile);
-    return;
+    Game::singlePlayer(save);
 }
 
 void Game::singleplayerSelection() {

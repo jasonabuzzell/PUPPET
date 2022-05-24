@@ -1,7 +1,7 @@
 #include "../.hpp/Character.h"
+#include "../.hpp/Helper.h"
 #include "../.hpp/XYZ.h"
 #include "../.hpp/json.hpp"
-#include "../.hpp/Helper.h"
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -23,8 +23,7 @@ Character::Character(XYZ xyz, string title, string place, string part)
       z(new float(0.0)),
       moveFlag(true),
       lookFlag(true),
-      ableFlag(true) 
-{
+      ableFlag(true) {
     vector<int> coords = xyz.listRooms()[*location][*point]["coords"];
     *x = coords[0];
     *y = coords[1];
@@ -33,6 +32,17 @@ Character::Character(XYZ xyz, string title, string place, string part)
 
 string Character::getName() {
     return name;
+}
+
+void Character::setParameters(vector<string> position, vector<float> coords, vector<bool> flags) {
+    *location = position[0];
+    *point = position[1];
+    *x = coords[0];
+    *y = coords[1];
+    *z = coords[2];
+    moveFlag = flags[0];
+    ableFlag = flags[1];
+    lookFlag = flags[2];
 }
 
 void Character::setLocation(string loc) {
@@ -70,7 +80,7 @@ float *Character::getZ() {
 }
 
 vector<float> Character::getCoords() {
-    return { *x, *y, *z };
+    return {*x, *y, *z};
 }
 
 bool Character::getMoveFlag() {
@@ -96,10 +106,10 @@ json Character::distanceTime(vector<float> a, vector<float> b) {
     json movement;
     // Very demanding equation, might want to consider alternatives.
     int hypo = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
-    int dist = round(sqrt(hypo + pow(b[2]- a[2], 2))); 
+    int dist = round(sqrt(hypo + pow(b[2] - a[2], 2)));
     movement["Walking"] = dist; // like 1m/s.
     movement["Crouching"] = dist * 3;
-    movement["Running"] = static_cast<int>(round(float(dist) / 3));
+    movement["Running"] = int(ceil(float(dist) / 3));
     return movement;
 }
 
@@ -108,9 +118,9 @@ json Character::possibleMoves(XYZ xyz) {
     json rooms = xyz.listRooms();
     vector<float> a = rooms[*location][*point]["coords"];
     json connected = rooms[*location][*point]["connect"];
-    for (auto room: connected.items()) {
+    for (auto room : connected.items()) {
         moves[room.key()] = {};
-        for (auto point: room.value()) { 
+        for (auto point : room.value()) {
             vector<float> b = rooms[room.key()][point]["coords"];
             moves[room.key()][point] = {};
             json movement = Character::distanceTime(a, b);
@@ -130,15 +140,14 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
     cout << "Enter: ";
 }
 
-void Character::move(vector<float> curCoords, vector<float> expCoords, int curTime, int expTime) 
-{
-    vector<float*> coords = { x, y, z };
+void Character::move(vector<float> curCoords, vector<float> expCoords, int curTime, int expTime) {
+    vector<float *> coords = {x, y, z};
     float percentage = curTime / float(expTime);
     for (int i = 0; i < coords.size(); i++) {
         *coords[i] = (expCoords[i] - curCoords[i]) * percentage + curCoords[i];
     }
-    cout << " X: " << setprecision(2) << *x << " Y: " 
-            << *y << " Z: " << *z << "\n";
+    cout << "  Current Location: X: " << setprecision(2) << *x << ", Y: "
+         << *y << ", Z: " << *z << "\n";
 }
 
 json Character::look(XYZ xyz, json actions) {
@@ -148,9 +157,9 @@ json Character::look(XYZ xyz, json actions) {
     actions[name]["Look"]["Rooms"]["Time"] = 4;
     json room = xyz.listRooms()[*location];
     json connect = room[*point]["connect"];
-    for (auto room: connect.items()) {
+    for (auto room : connect.items()) {
         actions[name]["Look"]["Rooms"][room.key()] = {};
-        for (auto part: room.value()) {
+        for (auto part : room.value()) {
             actions[name]["Look"]["Rooms"][room.key()].push_back(part);
         }
     }
@@ -158,7 +167,7 @@ json Character::look(XYZ xyz, json actions) {
     actions[name]["Look"]["Room Items"] = json({});
     actions[name]["Look"]["Room Items"]["Time"] = 3;
     actions[name]["Look"]["Room Items"]["Items"] = xyz.getItems(*location);
-    
+
     actions[name]["Look"]["Inventory Items"] = json({});
     actions[name]["Look"]["Inventory Items"]["Time"] = 2;
     actions[name]["Look"]["Inventory Items"]["Items"] = xyz.getItems(name);

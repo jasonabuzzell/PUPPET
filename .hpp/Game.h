@@ -28,11 +28,11 @@ class Game
         void manualInner(int choice, std::ifstream *readme);
         void manual();
         nlohmann::json optionsInputType(nlohmann::json options);
+        nlohmann::json optionsAutosave(nlohmann::json options);
         void options();
         void save(XYZ xyz, std::vector<Character> characters);
         nlohmann::json actions(XYZ xyz, Character chara, nlohmann::json actions);
-        void singlePlayer(XYZ xyz, std::vector<Character> characters);
-        void load(nlohmann::json xyzFile, nlohmann::json charactersFile);
+        void singlePlayer(nlohmann::json file);
         void newGame();
         void resumeGame();
         void singleplayerSelection();
@@ -43,8 +43,9 @@ class Game
         std::string *inputType;
         std::string *strChoice;
         int *enumChoice;
-        bool *exit;
         int *time;
+        bool *exit;
+        bool autosave;
 };
 
 #endif
