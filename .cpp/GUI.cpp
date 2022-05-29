@@ -14,10 +14,11 @@
 #include <iostream>
 #include <math.h>
 
-const unsigned int width = 1920;
-const unsigned int height = 1080;
+const unsigned int width = 500;
+const unsigned int height = 500;
 
 using namespace glm;
+using namespace std;
 
 // Vertices coordinates
 GLfloat vertices[] =
@@ -83,7 +84,9 @@ GLuint lightIndices[] =
 	4, 6, 7
 };
 
-GUI::GUI() {
+GUI::GUI() {}
+
+void GUI::run(bool *flag) {
 	// Initialize GLFW
 	glfwInit();
 
@@ -172,10 +175,9 @@ GUI::GUI() {
 	Camera camera(width, height, vec3(0.0f, 0.0f, 2.0f));
 
 	// Main while loop
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(window) && *flag)
 	{
-		// Specify the color of the background
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		glClearColor(0, 0, 0, 0);
 		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -188,7 +190,10 @@ GUI::GUI() {
 		// Tells OpenGL which Shader Program we want to use
 		shaderProgram.Activate();
 		// Exports the camera Position to the Fragment Shader for specular lighting
-		glUniform3f(glGetUniformLocation(shaderProgram.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+		vec3 pos = camera.getPosition();
+		glUniform3f(glGetUniformLocation(shaderProgram.ID, "camPos"), pos.x, pos.y, pos.z);
+		// cout << "X: " << pos.x << " Y: " << pos.y << " Z: " << pos.z << "\n";
+
 		// Export the camMatrix to the Vertex Shader of the pyramid
 		camera.Matrix(shaderProgram, "camMatrix");
 		// Binds texture so that is appears in rendering
@@ -213,6 +218,9 @@ GUI::GUI() {
 		// Take care of all GLFW events
 		glfwPollEvents();
 	}
+
+	// Game GUI window reset
+	*flag = false;
 
 	// Delete all the objects we've created
 	VAO1.Delete();

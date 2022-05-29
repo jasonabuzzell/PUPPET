@@ -9,6 +9,7 @@
 class GUI {
     public:
         GUI();
+        void run(bool *flag);
 };
 
 #endif

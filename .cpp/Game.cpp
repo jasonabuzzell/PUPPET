@@ -3,6 +3,7 @@
 #include "../.hpp/XYZ.h"
 #include "../.hpp/Item.h"
 #include "../.hpp/Helper.h"
+#include "../.hpp/GUI.h"
 #include "../.hpp/json.hpp"
 #include "../.hpp/glad.h"
 #include "../.hpp/glfw3.h"
@@ -21,7 +22,8 @@ Game::Game()
       strChoice(new string("")),
       inputType(new string("")),
       exit(new bool(false)),
-      autosave(true) 
+      guiFlag(new bool(false)),
+      autosave(true)
 {
     cout << "LOADING: [puppet] ... \n";
     "----------------------------\n\n";
@@ -36,7 +38,13 @@ Game::Game()
         *inputType = "String";
     }
 
+    *guiFlag = options["GUI"];
+
     cout << "Input Type: " << *inputType << "\n";
+}
+
+void guiRun(GUI gui, bool *flag) {
+    gui.run(flag);
 }
 
 int *Game::getTime() {
@@ -106,9 +114,6 @@ int Game::choice(vector<string> allChoices, string print, int count=0) {
     }
 }
 
-// moving() function has to be here because it involves Game::choice(),
-// meaning that it involves user input as a game decision. That's why
-// look() exists as a Character function because it does not need input.
 json Game::moving(XYZ xyz, Character chara, json actions) {
     json moves = chara.possibleMoves(xyz);
     vector<string> allMoves, allPoints, allMovement;
@@ -406,16 +411,42 @@ json Game::optionsInputType(json options) {
 
 json Game::optionsAutosave(json options) {
     vector<string> allChoices = {"yes", "no"};
-    string print = "\nAUTOSAVE:\n\n0. Yes\n1. No\nEnter: ";
+    string print = "\nAUTOSAVE\n:\n\n0. Yes\n1. No\nEnter: ";
     int choice = Game::choice(allChoices, print, allChoices.size());
     switch(choice) {
         case 0: // Yes
-            autosave = true;
-            options["Autosave"] = "Yes";
+            options["Autosave"] = autosave = true;
             break;
         case 1:
-            autosave = false;
-            options["Autosave"] = "No";
+            options["Autosave"] = autosave = false;
+            break;
+        case 2: return options; // Cancel
+    }
+
+    ofstream ofs(".json/options.json");
+    ofs << options;
+    ofs.close();
+
+    return options;
+}
+
+json Game::optionsGUI(json options) {
+    vector<string> allChoices = {"yes", "no"};
+    string print = "\nGUI:\n\n0. Yes\n1. No\nEnter: ";
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    switch(choice) {
+        case 0: // Yes
+            if (!*guiFlag) {
+                options["GUI"] = *guiFlag = true;
+                threadGUI = new thread(guiRun, gui, guiFlag);
+                *threadGUI;
+            }
+            break;
+        case 1:
+            if (*guiFlag) {
+                options["GUI"] = *guiFlag = false;
+                threadGUI->detach();
+            }
             break;
         case 2: return options; // Cancel
     }
@@ -430,7 +461,7 @@ json Game::optionsAutosave(json options) {
 void Game::options() {
     int choice;
     Strint strint("", -1);
-    vector<string> allOptions = { "input type", "autosave" "cancel" };
+    vector<string> allOptions = { "autosave", "gui", "input type", "cancel" };
 
     cout << "\nOPTIONS:\n";
     ifstream ifs(".json/options.json");
@@ -441,13 +472,16 @@ void Game::options() {
         strint = printJson(options);
         choice = Game::choice(allOptions, strint.getStr(), strint.getInt());
         switch (choice) {
-        case 0: // inputType
-            options = Game::optionsInputType(options);
-            break;
-        case 1: // Autosave
+        case 0: // Autosave
             options = Game::optionsAutosave(options);
             break;
-        case 2: return; // Back
+        case 1: // GUI
+            options = Game::optionsGUI(options);
+            break;
+        case 2: // inputType
+            options = Game::optionsInputType(options);
+            break;
+        case 3: return; // Back
         }
     }
 }
@@ -603,13 +637,6 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
     return actions;
 }
 
-// TO DO: 
-// Visibility (for hiding)
-// Add all rooms
-// Add all items and functionality
-// Add Characters and their logic with automate().
-// Add GUI (OpenGL)
-// Add Audio (Wwise?)
 void Game::singlePlayer(json file) {
     int choice;
     string print;
@@ -790,13 +817,14 @@ void Game::singleplayerSelection() {
     }
 }
 
-// Need to add all Game threads.
 void Game::menu() {
     int choice;
     vector<string> allChoices = {"new", "resume", "options",
                                  "manual", "exit" };
     string print = "\n0. Singleplayer\n1. Multiplayer\n2. Options\n3. Manual\n4. Exit\nEnter: ";
-    
+
+    if (*guiFlag) threadGUI = new thread(guiRun, gui, guiFlag);
+
     while (true) {
         choice = Game::choice(allChoices, print, allChoices.size()-1);
         switch (choice) {
@@ -819,3 +847,10 @@ void Game::menu() {
         }
     }
 }
+
+// TO DO: 
+// Add all rooms
+// Add all items and functionality (including visibility using objects for hiding)
+// Add Characters and their logic with automate().
+// Update GUI.
+// Add Audio (Wwise?)

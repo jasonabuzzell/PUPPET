@@ -1,11 +1,23 @@
 #include "../.hpp/Camera.h"
+#include <vector>
 
 using namespace glm;
+using namespace std;
 
 Camera::Camera(int width, int height, vec3 position) {
     Camera::width = width;
     Camera::height = height;
     Position = position;
+}
+
+vec3 Camera::getPosition() {
+    return Position;
+}
+
+void Camera::setPosition(vector<float> coords) {
+    Position.x = coords[0];
+    Position.y = coords[1];
+    Position.z = coords[2];
 }
 
 void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {

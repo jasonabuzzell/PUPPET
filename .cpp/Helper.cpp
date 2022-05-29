@@ -166,3 +166,11 @@ string roundStr(float f) {
     }
     return fStr;
 }
+
+string upper(string s) {
+    string up;
+    for (auto c: s) {
+        up += toupper(c);
+    }
+    return up;
+}

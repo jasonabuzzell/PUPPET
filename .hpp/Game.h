@@ -5,8 +5,10 @@
 #include "json.hpp"
 #include "XYZ.h"
 #include "Character.h"
+#include "GUI.h"
 #include "Helper.h"
 #include <fstream>
+#include <thread>
 #include <string>
 
 class Game
@@ -29,6 +31,7 @@ class Game
         void manual();
         nlohmann::json optionsInputType(nlohmann::json options);
         nlohmann::json optionsAutosave(nlohmann::json options);
+        nlohmann::json optionsGUI(nlohmann::json options);
         void options();
         void save(XYZ xyz, std::vector<Character> characters);
         nlohmann::json actions(XYZ xyz, Character chara, nlohmann::json actions);
@@ -39,6 +42,8 @@ class Game
         void menu();
 
     private:
+        GUI gui;
+        std::thread *threadGUI;
         std::string input;
         std::string *inputType;
         std::string *strChoice;
@@ -46,6 +51,7 @@ class Game
         int *time;
         bool *exit;
         bool autosave;
+        bool *guiFlag;
 };
 
 #endif

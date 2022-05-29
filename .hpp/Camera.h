@@ -11,10 +11,24 @@
 #include "glm/gtx/vector_angle.hpp"
 
 #include "Shaders.h"
+#include <vector>
 
 class Camera
 {
 public:
+	// Camera constructor to set up initial values
+	Camera(int width, int height, glm::vec3 position);
+
+	glm::vec3 getPosition();
+	void setPosition(std::vector<float> coords);
+
+	// Updates the camera matrix to the Vertex Shader
+	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
+	// Exports the camera matrix to a shader
+	void Matrix(Shader& shader, const char* uniform);
+	// Handles camera inputs
+	void Inputs(GLFWwindow* window);
+private:
 	// Stores the main vectors of the camera
 	glm::vec3 Position;
 	glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -32,14 +46,5 @@ public:
 	float speed = 0.1f;
 	float sensitivity = 100.0f;
 
-	// Camera constructor to set up initial values
-	Camera(int width, int height, glm::vec3 position);
-
-	// Updates the camera matrix to the Vertex Shader
-	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
-	// Exports the camera matrix to a shader
-	void Matrix(Shader& shader, const char* uniform);
-	// Handles camera inputs
-	void Inputs(GLFWwindow* window);
 };
 #endif
