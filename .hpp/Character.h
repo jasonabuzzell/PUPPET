@@ -9,7 +9,7 @@
 class Character
 {
     public:
-        Character(XYZ xyz, std::string title, std::string place, std::string part);
+        Character(XYZ xyz, std::string title, std::string place, std::string part, bool use);
         void setParameters(std::vector<std::string> position, std::vector<float> coords, std::vector<bool> flags);
         void setLocation(std::string loc);
         void setPoint(std::string poi);
@@ -17,6 +17,7 @@ class Character
         std::string getName();
         std::string *getLocation();
         std::string *getPoint();
+        bool getUser();
         float *getX();
         float *getY();
         float *getZ();
@@ -28,6 +29,7 @@ class Character
         nlohmann::json look(XYZ xyz, nlohmann::json actions);
         void printActions(XYZ xyz, std::vector<std::string> actions);
         std::vector<std::string> allActions(XYZ xyz);
+        int distance(std::vector<float> a, std::vector<float> b);
         nlohmann::json distanceTime(std::vector<float> a, std::vector<float> b);
         nlohmann::json possibleMoves(XYZ xyz);
         void printMoves(XYZ xyz, std::vector<std::string> moves);
@@ -43,7 +45,7 @@ class Character
         bool moveFlag;
         bool lookFlag;
         bool ableFlag;
-        int decision;
+        bool user;
 };
 
 #endif

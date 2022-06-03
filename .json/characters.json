@@ -1,8 +1,79 @@
 {
-    "0": {},
-    "1": {},
-    "2": {},
-    "3": {},
-    "4": {},
-    "5": {}
+    "0": {
+        "0": {
+            "Auto": false,
+            "Flags": {
+                "Auto": false,
+                "Can Look": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                },
+                "Can Move": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                },
+                "Is Able": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                }
+            },
+            "Locations": {
+                "Auto": false,
+                "Start 0: A": {
+                    "Auto": false,
+                    "Move: Start 0: B: 0 7 0: 1": 1.0,
+                    "Total": 2
+                },
+                "Start 0: B": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 1.0,
+                    "Total": 1
+                }
+            }
+        },
+        "1": {
+            "Auto": false,
+            "Flags": {
+                "Auto": false,
+                "Can Look": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                },
+                "Can Move": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                },
+                "Is Able": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 0.3333333432674408,
+                    "Move: Start 0: B: 0 7 0: 1": 0.6666666865348816,
+                    "Total": 3
+                }
+            },
+            "Locations": {
+                "Auto": false,
+                "Start 0: A": {
+                    "Auto": false,
+                    "Move: Start 0: B: 0 7 0: 1": 1.0,
+                    "Total": 2
+                },
+                "Start 0: B": {
+                    "Auto": false,
+                    "Move: Start 0: A: 0 0 0: 1": 1.0,
+                    "Total": 1
+                }
+            }
+        },
+        "Auto": false
+    }
 }

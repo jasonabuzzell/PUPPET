@@ -12,7 +12,7 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [{ "name": "config", "value": "Debug" }],
             "console": "externalTerminal"
         }
     ]

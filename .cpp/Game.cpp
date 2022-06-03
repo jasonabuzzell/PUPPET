@@ -10,8 +10,10 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <math.h>
 #include <thread>
 #include <windows.h>
+#include <random>
 
 using namespace std;
 using namespace nlohmann;
@@ -28,9 +30,7 @@ Game::Game()
     cout << "LOADING: [puppet] ... \n";
     "----------------------------\n\n";
 
-    ifstream ifs(".json/options.json");
-    json options = json::parse(ifs);
-    ifs.close();
+    json options = jsonLoad("options");
 
     if (options["Input Type"] == "Enumeration") {
         *inputType = "Enumeration";
@@ -42,6 +42,9 @@ Game::Game()
 
     cout << "Input Type: " << *inputType << "\n";
 }
+
+// GAME HELPER FUNCTIONS
+// ----------------------------------------------------------------
 
 void guiRun(GUI gui, bool *flag) {
     gui.run(flag);
@@ -114,6 +117,9 @@ int Game::choice(vector<string> allChoices, string print, int count=0) {
     }
 }
 
+// MOVING
+// ----------------------------------------------------------------
+
 json Game::moving(XYZ xyz, Character chara, json actions) {
     json moves = chara.possibleMoves(xyz);
     vector<string> allMoves, allPoints, allMovement;
@@ -122,6 +128,7 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
     }
     Strint strint = printJson(moves);
 
+    // Choose which room to move to.
     int choice = Game::choice(allMoves, strint.getStr(), strint.getInt());
     if (choice < strint.getInt()) {
         string room = cap(allMoves[choice]);
@@ -131,6 +138,7 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
             allPoints.push_back(decap(i.key()));
         }
 
+        // Choose which point to move to.
         choice = Game::choice(allPoints, strint.getStr(), strint.getInt());
         if (choice < strint.getInt()) {
             string point = cap(allPoints[choice]);
@@ -140,9 +148,11 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
             for (auto i: pointChoice.items()) {
                 allMovement.push_back(decap(i.key()));
             }
+
+            // Choose how you move to that point (i.e. walking, running, crouching)
             choice = Game::choice(allMovement, strint.getStr(), strint.getInt());
             if (choice < strint.getInt()) {
-                json move = json({});
+                json move;
                 string movement = cap(allMovement[choice]);
                 int expTime = pointChoice[movement];
                 move["Location"] = room;
@@ -153,6 +163,14 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
                 move["Expected Time"] = expTime;
                 actions[chara.getName()]["Move"] = move;
                 actions["Active"] = true;
+
+                string coordsStr;
+                for (auto f: coords) {
+                    coordsStr += roundStr(f) + " "; 
+                }
+                coordsStr.pop_back();
+
+                actions[chara.getName()]["Move"]["tag"] = "Move: " + room + ": " + point + ": " + coordsStr + ": " + to_string(expTime);
                 return actions; 
             }
         }
@@ -161,6 +179,9 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
 
     return actions;
 }
+
+// INTERACT
+// ----------------------------------------------------------------
 
 json Game::interact(XYZ xyz, Character chara, json actions) {
     int roomCount, invCount, choice;
@@ -202,18 +223,34 @@ json Game::interact(XYZ xyz, Character chara, json actions) {
             choice = Game::choice(allMovement, printTwo, strint.getInt());
             if (choice < strint.getInt()) { 
                 // Take uses Move to get to item.
+                int expTime = movement[cap(allMovement[choice])];
                 move["Location"] = *chara.getLocation();
                 move["Point"] = item.getPoint();
                 move["Current Coords"] = chara.getCoords();
                 move["Expected Coords"] = item.getCoords(xyz, chara);
                 move["Current Time"] = 0;
-                move["Expected Time"] = movement[cap(allMovement[choice])];
+                move["Expected Time"] = expTime;
 
                 interact["Type"] = "Take";
                 interact["Item Name"] = itemName;
                 actions["Active"] = true;
                 actions[chara.getName()]["Move"] = move;
                 actions[chara.getName()]["Interact"] = interact;
+
+                string coordsStr;
+                for (auto f: chara.getCoords()) {
+                    coordsStr += roundStr(f) + " "; 
+                }
+                coordsStr.pop_back();
+
+                string itemCoordsStr;
+                for (auto f: item.getCoords(xyz, chara)) {
+                    itemCoordsStr += roundStr(f) + " "; 
+                }
+                itemCoordsStr.pop_back();
+
+                actions[chara.getName()]["Interact"]["tag"] = "Interact: Take: " + itemName + ": " + coordsStr + ": " + itemCoordsStr + ": " + to_string(expTime);
+
                 return actions;
             } // Cancel just goes through the loop again
         } else if (choice < invCount) { // item in inventory (use/drop)
@@ -239,6 +276,22 @@ json Game::interact(XYZ xyz, Character chara, json actions) {
         } else if (choice == invCount) return actions; // Cancel
     }
 }
+
+// WAITING
+// ----------------------------------------------------------------
+
+json Game::waiting(Character chara, json actions) {
+    string print = "\nWait for how long?\nEnter: ";
+
+    int choice = Game::choice({}, print);
+    actions[chara.getName()]["Wait"] = choice;
+    actions[chara.getName()]["Wait"]["tag"] = "Wait: " + to_string(choice);
+    actions["Active"] = true;
+    return actions;
+}
+
+// PRINTING
+// ----------------------------------------------------------------
 
 // Running at O(4i), fix this.
 Strint Game::printingInner(json catalog) {
@@ -268,23 +321,12 @@ Strint Game::printingInner(json catalog) {
     }
 }
 
-json Game::print(Character chara, json actions, Strint strint, string room) {
-    cout << "Sent " << strint.getStr() << " to print...\n";
-    actions[chara.getName()]["Print"]["Item Name"] = strint.getStr();
-    actions[chara.getName()]["Print"]["Time"] = strint.getInt();
-    actions[chara.getName()]["Print"]["Room"] = room;
-
-    return actions;
-}
-
 json Game::printing(Character chara, json actions) {
     cout << "\n\nPRINT:\n";
     int choice;
     string print;
     json printing;
-    ifstream ifs(".json/items.json");
-    json catalog = json::parse(ifs)["Catalog"];
-    ifs.close();
+    json catalog = jsonLoad("items")["Catalog"];
 
     if (actions[chara.getName()].contains("Print")) {
         printing = actions[chara.getName()]["Print"];
@@ -309,24 +351,335 @@ json Game::printing(Character chara, json actions) {
     }
     print += "Enter: ";
     choice = Game::choice(allRooms, print, allRooms.size());
-    if (choice < allRooms.size()) return Game::print(chara, actions, strint, allRooms[choice]);
+    if (choice < allRooms.size()) {
+        cout << "Sent " << strint.getStr() << " to print...\n";
+        actions[chara.getName()]["Print"]["Item Name"] = strint.getStr();
+        actions[chara.getName()]["Print"]["Time"] = strint.getInt();
+        actions[chara.getName()]["Print"]["Room"] = allRooms[choice];
+        actions["Passive"] = true;
+        
+        actions[chara.getName()]["Print"]["tag"] = "Print: " + strint.getStr() + ": " + to_string(strint.getInt()) + ": " + allRooms[choice];
+
+        return actions;
+    }
     else if (choice == allRooms.size()) return actions; // Cancel
 
     return actions;
 }
 
-void Game::automate() {
+// AUTOMATE
+// ----------------------------------------------------------------
 
-}
+json Game::automateActions(XYZ xyz, vector<Character> charas, Character chara, json actions) {
+    json weights;
+    weights["Total"] = 0;
 
-json Game::waiting(Character chara, json actions) {
-    string print = "\nWait for how long?\nEnter: ";
+    json characters = jsonLoad("characters");
+    if (!characters.contains(chara.getName())) return actions;
+    json character = characters[chara.getName()];
 
-    int choice = Game::choice({}, print);
-    actions[chara.getName()]["Wait"] = choice;
-    actions["Active"] = true;
+    bool allActions = character["Auto"];
+
+    for (auto person: charas) {
+        json states = json({{"Flags", {}}, {"Locations", {}}});
+        vector<vector<string>> labels = {{"Can Look", "Can Not Look"}, {"Can Move", "Can Not Move"}, {"Is Able", "Is Not Able"}};
+        vector<bool> flags = {person.getLookFlag(), person.getMoveFlag(), person.getAbleFlag()};
+        for (int i = 0; i < flags.size(); i++) {
+            if (flags[i]) states["Flags"].push_back(labels[i][0]);
+            else states["Flags"].push_back(labels[i][1]);
+        }
+        string locLabel = *person.getLocation() + ": " + *person.getPoint();
+        states["Locations"].push_back(locLabel);
+
+        bool charActions = character[person.getName()]["Auto"];
+        bool groupActions;
+        bool stateActions;
+        
+        for (auto i: states.items()) {
+            string group = i.key();
+            for (string state: states[i.key()]) {
+                groupActions = character[person.getName()][group]["Auto"];
+
+                if (character[person.getName()][group].contains(state)) {
+                    stateActions = character[person.getName()][group][state]["Auto"];
+                    if (allActions || charActions || groupActions || stateActions) {
+                        json nextMoves = character[person.getName()][group][state];
+                        json clean = nextMoves;
+                        clean.erase("Auto");
+                        clean.erase("Total");
+                        int total = nextMoves["Total"];
+                        for (auto move: clean.items()) {
+                            float prob = move.value();
+                            if (!weights.contains(move.key())) weights[move.key()] = prob;
+                            else {
+                                float oldProb = weights[move.key()];
+                                int oldTotal = weights["Total"];
+                                prob = ((oldProb * oldTotal) + (prob * total)) / (oldTotal + total);
+                                weights[move.key()] = prob;
+                            }
+                            weights["Total"] = int(weights["Total"]) + total;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    json clean = weights;
+    clean.erase("Total");
+    if (clean == json({})) return actions;
+
+    float random = float(rand()) / RAND_MAX;
+    vector<string> moves = {"Move", "Look", "Interact", "Wait", "Print"};
+    
+    for (auto i: clean.items()) {
+        float prob = i.value();
+        if (random <= prob) {
+            string action = i.key();
+            vector<string> parts = splitString(action, ": ");
+            auto itr = find(moves.begin(), moves.end(), parts[0]);
+            switch (distance(moves.begin(), itr)) {
+                case 0: // Move
+                    if (chara.getMoveFlag()) {
+                        json move;
+                        move["Location"] = parts[1];
+                        move["Point"] = parts[2];
+                        move["Current Coords"] = chara.getCoords();
+                        move["Current Time"] = 0;
+                        move["Expected Coords"] = strVecFloat(splitString(parts[3], " "));
+                        move["Expected Time"] = stoi(parts[4]);
+                        actions[chara.getName()]["Move"] = move;
+                        actions["Active"] = true;
+
+                        return actions;
+                    }
+                    break;
+                case 1: // Look
+                    if (chara.getLookFlag()) {
+                        actions = chara.look(xyz, actions);
+                        return actions;
+                    }
+                    break;
+                case 2: // Interact
+                    if (chara.getAbleFlag()) {
+                        if (parts[1] == "Take") {
+                            json move, interact;
+                            interact["Type"] = parts[1];
+                            interact["Item Name"] = parts[2];
+
+                            move["Location"] = *chara.getLocation();
+                            move["Point"] = parts[3];
+                            move["Current Coords"] = chara.getCoords();
+                            move["Current Time"] = 0;
+                            move["Expected Coords"] = strVecFloat(splitString(parts[4], " "));
+                            move["Expected Time"] = stoi(parts[5]);
+
+                            actions["Active"] = true;
+                            actions[chara.getName()]["Move"] = move;
+                            actions[chara.getName()]["Interact"] = interact;
+                        }
+                        return actions;
+                    }
+                case 3: // Wait
+                    actions[chara.getName()]["Wait"] = parts[1];
+                    return actions;
+                case 4: // Print
+                    json print;
+                    print["Item Name"] = parts[1];
+                    print["Time"] = parts[2];
+                    print["Room"] = parts[3];
+            }
+        } 
+        random -= prob;
+    }
+
     return actions;
 }
+
+void Game::automateUpdate(vector<Character> charas, Character chara, json allStates, string parameter) {
+    json characters = jsonLoad("characters");
+    string name = chara.getName();
+    bool user = chara.getUser();
+
+    if (!characters.contains(name)) {
+        characters[name] = json({{"Auto", !user}});
+    }
+
+    for (auto character: charas) {
+        string bname = character.getName();
+        if (!characters[name].contains(bname)) 
+            characters[name][bname] = json({{"Auto", !user}});
+
+        if (!characters[name][bname].contains("Flags")) 
+            characters[name][bname]["Flags"] = json({{"Auto", !user}});
+        
+        if (!characters[name][bname].contains("Locations")) 
+            characters[name][bname]["Locations"] = json({{"Auto", !user}});
+
+        json results = characters[name][bname];
+        for (auto i: allStates.items()) {
+            string group = i.key();
+            if (!results.contains(group)) results[group] = json({{"Auto", !user}});
+
+            for (string state: allStates[i.key()]) {
+                if (!results[group].contains(state)) results[group][state] = json({{"Auto", !user}, {"Total", 0}});
+                
+                json nextMoves = results[group][state];
+                json clean = nextMoves;
+                clean.erase("Auto");
+                clean.erase("Total");
+                clean.erase(parameter);
+                int total = nextMoves["Total"];
+                float prob;
+                if (!nextMoves.contains(parameter)) prob = 0.0;
+                else prob = nextMoves[parameter];
+                nextMoves[parameter] = (prob * total + 1) / (total + 1);
+                for (auto param: clean.items()) {
+                    prob = nextMoves[param.key()];
+                    nextMoves[param.key()] = (prob * total) / (total + 1);
+                }
+                nextMoves["Total"] = total + 1;
+                results[group][state] = nextMoves;
+            }
+        }
+        characters[name][bname] = results;
+
+    }
+
+    jsonSave(characters, "characters");
+}
+
+json Game::automateEnable(json dict) {
+    vector<string> allChoices = { "enable", "disable", "back" };
+    string print = "\nEnable or Disable Automation:\n0. Enable\n1. Disable\n2. Back\nEnter: ";
+    int choice = Game::choice(allChoices, print, allChoices.size());
+    
+    // For some reason, a switch-case can't handle this.
+    if (choice == 0) dict["Auto"] = true; // Enable
+    else if (choice == 1) dict["Auto"] = false; // Disable
+    
+    return dict;
+}
+
+void Game::automate(Character chara) {
+    int count, choice;
+    string print;
+    json characters = jsonLoad("characters");
+    json character = characters[chara.getName()];
+
+    while (true) {
+        vector<string> allChoices = {};
+        count = 0;
+        for (auto person: character.items()) {
+            allChoices.push_back(decap(person.key()));
+        }
+        allChoices.push_back("back");
+        Strint strint = printJson(character);
+        print = "\nBased on parameters of:\n";
+        choice = Game::choice(allChoices, print + strint.getStr(), strint.getInt());
+        string person = cap(allChoices[choice]);
+
+        if (allChoices[choice] == "auto") character = Game::automateEnable(character);
+        else if (choice == allChoices.size() - 1) return; // Cancel
+        else {
+            json groups = character[cap(allChoices[choice])];
+            allChoices = {};
+            for (auto group: groups.items()) {
+                allChoices.push_back(decap(group.key()));
+            }
+            allChoices.push_back("cancel");
+            strint = printJson(groups);
+            choice = Game::choice(allChoices, strint.getStr(), strint.getInt());
+            string group = cap(allChoices[choice]);
+
+            if (allChoices[choice] == "auto") character[person] = Game::automateEnable(groups);
+            else if (choice != allChoices.size() - 1) {
+                json params = groups[group];
+                count = 0;
+                vector<string> allParameters = {};
+                for (auto param: params.items()) {
+                    allParameters.push_back(decap(param.key()));
+                }
+                allParameters.push_back("cancel");
+                strint = printJson(params);
+                choice = Game::choice(allParameters, strint.getStr(), strint.getInt());
+                string param = cap(allParameters[choice]);
+                
+                if (param == "Auto") character[person][group] = Game::automateEnable(params);
+                else if (choice != allParameters.size() - 1) {
+                    count = 0;
+                    print = "\n";
+                    json nextMoves = params[param];
+                    json clean = nextMoves;
+                    clean.erase("Total");
+                    vector<string> allActions = {};
+                    for (auto i: clean.items()) {
+                        allActions.push_back(decap(i.key()));
+                    }
+                    allActions.push_back("cancel");
+                    cout << "size: " << allActions.size() << "\n";
+                    Strint strint = printJson(clean);
+                    choice = Game::choice(allActions, strint.getStr(), strint.getInt());
+                    cout << "choice: " << choice << "\n";
+                    string action = cap(allActions[choice]);
+
+                    if (action == "Auto") character[person][person][group][param] = Game::automateEnable(nextMoves);
+                    else if (choice != allActions.size() - 1) {
+                        float oldFloat = nextMoves[action];
+                        int oldInt = round(oldFloat * 100);
+                        print = "\nChange the probability of \"" + action + "\" from " + to_string(oldInt) + " to a number between 0 and 100:\nEnter: ";
+                        choice = Game::choice({}, print); 
+                        if (choice > 100) choice = 100;
+                        else if (choice < 0) choice = 0;
+                        float choiceFloat = float(choice) / 100;
+                        json clean = nextMoves;
+                        clean.erase("Auto");
+                        clean.erase("Total");
+                        clean.erase(action);
+                        float oldChoice = nextMoves[action];
+                        float oldTotal = 1 - oldChoice;
+                        float newTotal = 1 - choiceFloat;
+                        int cleanNum = clean.size();
+                        float sum = choiceFloat;
+                        if (newTotal == 0) {
+                            for (auto i: clean.items()) {
+                                nextMoves[i.key()] = 0.0;
+                            }
+                        } else if (oldTotal == 0) {
+                            for (auto i: clean.items()) {
+                                float calc = newTotal / cleanNum;
+                                nextMoves[i.key()] = calc;
+                                sum += calc;
+                            }
+                        } else {
+                            for (auto i: clean.items()) {
+                                float prob = nextMoves[i.key()];
+                                float calc = newTotal * prob / oldTotal;
+                                nextMoves[i.key()] = calc;
+                                sum += calc;
+                            }
+                        }
+                        if (sum != 1) { // will run regardless because of float inaccuracy.
+                            float multi = 1 / sum;
+                            choiceFloat *= multi;
+                            for (auto i: clean.items()) {
+                                float prob = nextMoves[i.key()];
+                                nextMoves[i.key()] = prob * multi;
+                            }
+                        }
+                        nextMoves[action] = choiceFloat;
+                        character[person][group][param] = nextMoves;
+                    }
+                }
+            }
+        }
+        characters[chara.getName()] = character; 
+        jsonSave(characters, "characters");
+    }
+}
+
+// MANUAL
+// ----------------------------------------------------------------
 
 void Game::manualInner(int choose, ifstream *readme) {
     string line;
@@ -384,6 +737,9 @@ void Game::manual() {
     }
 }
 
+// OPTIONS
+// ----------------------------------------------------------------
+
 json Game::optionsInputType(json options) {
     vector<string> allInputs = {"enumeration", "string", "cancel"};
     string print = "\nINPUT TYPE:\n\n0. Enumeration\n1. String\n"
@@ -401,11 +757,8 @@ json Game::optionsInputType(json options) {
             break;
         case 2: return options; // Cancel  
     }
-
-    ofstream ofs(".json/options.json");
-    ofs << options;
-    ofs.close();
-
+    jsonSave(options, "options");
+    
     return options;
 }
 
@@ -422,10 +775,7 @@ json Game::optionsAutosave(json options) {
             break;
         case 2: return options; // Cancel
     }
-
-    ofstream ofs(".json/options.json");
-    ofs << options;
-    ofs.close();
+    jsonSave(options, "options");
 
     return options;
 }
@@ -439,7 +789,6 @@ json Game::optionsGUI(json options) {
             if (!*guiFlag) {
                 options["GUI"] = *guiFlag = true;
                 threadGUI = new thread(guiRun, gui, guiFlag);
-                *threadGUI;
             }
             break;
         case 1:
@@ -450,10 +799,7 @@ json Game::optionsGUI(json options) {
             break;
         case 2: return options; // Cancel
     }
-
-    ofstream ofs(".json/options.json");
-    ofs << options;
-    ofs.close();
+    jsonSave(options, "options");
 
     return options;
 }
@@ -461,12 +807,11 @@ json Game::optionsGUI(json options) {
 void Game::options() {
     int choice;
     Strint strint("", -1);
-    vector<string> allOptions = { "autosave", "gui", "input type", "cancel" };
+    // Relies on Strint to be sorted the same way.
+    vector<string> allOptions = { "autosave", "gui", "input type", "cancel" }; 
 
     cout << "\nOPTIONS:\n";
-    ifstream ifs(".json/options.json");
-    json options = json::parse(ifs);
-    ifs.close();
+    json options = jsonLoad("options");
 
     while (true) {
         strint = printJson(options);
@@ -486,7 +831,9 @@ void Game::options() {
     }
 }
 
-// May be out of order
+// SAVE
+// ----------------------------------------------------------------
+
 void Game::save(XYZ xyz, vector<Character> characters) {
     string name;
     json charFile;
@@ -494,7 +841,8 @@ void Game::save(XYZ xyz, vector<Character> characters) {
 
     // Game Save
     save["time"] = *time;
-    save["autosave"] = save;
+    save["autosave"] = autosave;
+    save["gui"] = *guiFlag;
 
     // XYZ Save
     save["xyz"] = {};
@@ -517,22 +865,20 @@ void Game::save(XYZ xyz, vector<Character> characters) {
     }
 
     save["file"] = true;
-    ifstream ifs(".json/items.json");
-    json items = json::parse(ifs)["Location"];
+    json items = jsonLoad("items")["Location"];
     save["items"] = items;
-    ifs.close();
-    ofstream ofs(".json/save.json");
-    ofs << save;
-    ofs.close();
+    jsonSave(save, "save");
 
     cout << "\nSaved!\n";
 }
 
+// ACTIONS
+// ----------------------------------------------------------------
+
 // This is essentially a World Clock system for properly correlating actions.
 // Only activates when an active user decision is selected
 // (i.e. Move, Look, Wait, sometimes Interact)
-// Should also update character preferences.
-json Game::actions(XYZ xyz, Character chara, json actions) {
+json Game::actions(XYZ xyz, vector<Character> charas, json actions) {
     json charActions;
     int timer, wait;
     *enumChoice = -1;
@@ -547,102 +893,115 @@ json Game::actions(XYZ xyz, Character chara, json actions) {
             return actions;
         } 
         actions["Active"] = false;
-        charActions = actions[chara.getName()];
 
-        if (charActions.contains("Print")) { // Passive
-            json printing = actions[chara.getName()]["Print"];
-            string room = printing["Room"];
-            string itemName = printing["Item Name"];
-            timer = printing["Time"];
-            if (timer < 1) { // Adds item to XYZ
-                actions[chara.getName()].erase("Print");
-                addItem(itemName, room, "Printer");
-            } else actions[chara.getName()]["Print"]["Time"] = --timer;
-        }
+        // Should iterate through actions for each character, when:
+        // if (chara.getUser()) actions["Active"] = true;
 
-        if (charActions.contains("Interact")) { // Active / Passive
-            json interact = actions[chara.getName()]["Interact"];
-            string itemName = interact["Item Name"];
-            Item item(*chara.getLocation(), itemName, false);
-            if (interact["Type"] == "Take") {
-                cout << "Taking " << itemName << "...\n";
-                if (!charActions.contains("Move")) { 
-                    item.update(*chara.getLocation(), chara.getName(), "A", true);
+        for (auto chara: charas) {
+            // Gives a chara(cter) its automated moveset.
+            actions = Game::automateActions(xyz, charas, chara, actions);
+            charActions = actions[chara.getName()];
+
+            if (charActions.contains("Print")) { // Passive
+                json printing = actions[chara.getName()]["Print"];
+                string room = printing["Room"];
+                string itemName = printing["Item Name"];
+                timer = printing["Time"];
+                if (timer < 1) { // Adds item to XYZ
+                    actions[chara.getName()].erase("Print");
+                    addItem(itemName, room, "Printer");
+                } else actions[chara.getName()]["Print"]["Time"] = --timer;
+            }
+
+            if (charActions.contains("Interact")) { // Active / Passive
+                json interact = actions[chara.getName()]["Interact"];
+                string itemName = interact["Item Name"];
+                Item item(*chara.getLocation(), itemName, false);
+                if (interact["Type"] == "Take") {
+                    cout << "Taking " << itemName << "...\n";
+                    if (!charActions.contains("Move")) { 
+                        item.update(*chara.getLocation(), chara.getName(), "A", true);
+                        actions[chara.getName()].erase("Interact");
+                    } else if (chara.getUser()) actions["Active"] = true;
+                } else if (interact["Type"] == "Drop") {
+                    cout << "Dropping " << itemName << "...\n";
+                    item.update(chara.getName(), *chara.getLocation(), *chara.getPoint(), false);
                     actions[chara.getName()].erase("Interact");
-                } else actions["Active"] = true;
-            } else if (interact["Type"] == "Drop") {
-                cout << "Dropping " << itemName << "...\n";
-                item.update(chara.getName(), *chara.getLocation(), *chara.getPoint(), false);
-                actions[chara.getName()].erase("Interact");
-            } else if (interact["Type"] == "Use") {
-                cout << "Using " << itemName << "...\n";
-                // Have to add more to check item usage.
-                actions[chara.getName()].erase("Interact");
+                } else if (interact["Type"] == "Use") {
+                    cout << "Using " << itemName << "...\n";
+                    // Have to add more to check item usage.
+                    actions[chara.getName()].erase("Interact");
+                }
             }
+
+            
+            if (charActions.contains("Look")) { // Active
+                cout << "Looking...\n";
+                json look = actions[chara.getName()]["Look"];
+                for (auto i: look.items()) {
+                    timer = look[i.key()]["Time"];
+                    if (timer < 1) {
+                        look[i.key()].erase("Time");
+                        if (i.key() == "Rooms") {
+                            cout << "  " << i.key() << ":\n" << jsonListPrint(look[i.key()]);
+                        } else {
+                            cout << "  " << i.key() << ": " << listPrint(look[i.key()]["Items"]);
+                        }
+                        look.erase(i.key());
+                    } else look[i.key()]["Time"] = --timer;
+                }
+                if (look == json({})) actions[chara.getName()].erase("Look");
+                else {
+                    actions[chara.getName()]["Look"] = look;
+                    if (chara.getUser()) actions["Active"] = true;
+                }
+
+            }
+            
+            if (charActions.contains("Move")) { // Active
+                cout << "\nMoving...\n";
+                json move = actions[chara.getName()]["Move"];
+                chara.move(move["Current Coords"], move["Expected Coords"], move["Current Time"], move["Expected Time"]);
+                move["Current Time"] = int(move["Current Time"]) + 1;
+                if (move["Current Time"] == move["Expected Time"]) {
+                    chara.setLocation(move["Location"]);
+                    chara.setPoint(move["Point"]);
+                    chara.setCoords(move["Expected Coords"]);
+                    actions[chara.getName()].erase("Move");
+                } else { 
+                    if (chara.getUser()) actions["Active"] = true;
+                    actions[chara.getName()]["Move"] = move;
+                }
+            } 
+            
+            if (charActions.contains("Wait")) { // Active
+                wait = actions[chara.getName()]["Wait"];
+                string plural = " second";
+                if (counter != 1) plural += "s";
+                cout << "Waiting for " << counter << plural << "...\n";
+                if (counter++ == wait) actions[chara.getName()].erase("Wait");
+                else if (chara.getUser()) actions["Active"] = true;
+            }
+
+            if (actions[chara.getName()].empty()) actions.erase(chara.getName());
         }
 
-        
-        if (charActions.contains("Look")) { // Active
-            cout << "Looking...\n";
-            json look = actions[chara.getName()]["Look"];
-            for (auto i: look.items()) { // That's nasty i.key() replacement.
-                timer = look[i.key()]["Time"];
-                if (timer < 1) {
-                    look[i.key()].erase("Time");
-                    if (i.key() == "Rooms") {
-                        cout << "  " << i.key() << ":\n" << jsonListPrint(look[i.key()]);
-                    } else {
-                        cout << "  " << i.key() << ": " << listPrint(look[i.key()]["Items"]);
-                    }
-                    look.erase(i.key());
-                } else look[i.key()]["Time"] = --timer;
-            }
-            if (look == json({})) actions[chara.getName()].erase("Look");
-            else { // If "look" stills exists, then there are active actions.
-                actions[chara.getName()]["Look"] = look;
-                actions["Active"] = true;
-            }
-
-        } 
-        
-        if (charActions.contains("Move")) { // Active
-            cout << "\nMoving...\n";
-            json move = actions[chara.getName()]["Move"];
-            chara.move(move["Current Coords"], move["Expected Coords"], move["Current Time"], move["Expected Time"]);
-            move["Current Time"] = int(move["Current Time"]) + 1;
-            if (move["Current Time"] == move["Expected Time"]) {
-                chara.setLocation(move["Location"]);
-                chara.setPoint(move["Point"]);
-                chara.setCoords(move["Expected Coords"]);
-                actions[chara.getName()].erase("Move");
-            } else { 
-                actions["Active"] = true;
-                actions[chara.getName()]["Move"] = move;
-            }
-        } 
-        
-        if (charActions.contains("Wait")) { // Active
-            wait = actions[chara.getName()]["Wait"];
-            string plural = " second";
-            if (counter != 1) plural += "s";
-            cout << "Waiting for " << counter << plural << "...\n";
-            if (counter++ == wait) actions[chara.getName()].erase("Wait");
-            else actions["Active"] = true;
-        }
-
-        if (actions[chara.getName()].empty()) actions.erase(chara.getName());
         (*time)++;
-        Sleep(1000); // Might change this later to smaller time segments.
+        Sleep(1000); // Change to smaller increments.
     } 
+
     return actions;
 }
+
+// SINGLEPLAYER
+// ----------------------------------------------------------------
 
 void Game::singlePlayer(json file) {
     int choice;
     string print;
     XYZ xyz;
     vector<Character> characters;
-    Character zero(xyz, "0", "Start 0", "A");
+    Character zero(xyz, "0", "Start 0", "A", true);
     json actions = json({});
     actions["Active"] = false;
     vector<string> allActions = {"move", "look", "interact",
@@ -656,7 +1015,7 @@ void Game::singlePlayer(json file) {
 
     // Character Handler
     if (file["characters"] == json({})) {
-        Character one(xyz, "1", "Start 1", "B");
+        Character one(xyz, "1", "Start 1", "B", false);
         characters.push_back(zero);
         characters.push_back(one);
     } else {
@@ -668,7 +1027,7 @@ void Game::singlePlayer(json file) {
             zero.setParameters(position, coords, flags);
         }
         for (auto chara: file["characters"]) {
-            characters.push_back(Character(xyz, chara["name"], chara["location"], chara["point"]));
+            characters.push_back(Character(xyz, chara["name"], chara["location"], chara["point"], false));
         }
     }
 
@@ -682,28 +1041,64 @@ void Game::singlePlayer(json file) {
         print = "\nTime: " + to_string(*time) + "\nLocation: "
                 + *zero.getLocation() + ", Point: " + *zero.getPoint() + ", X: " + strCoords[0] + " Y: " + strCoords[1] + " Z: " + strCoords[2] + "\n\n" + "0. Move\n1. Look\n2. Interact\n3. Wait\n4. Print\n5. Automate\n6. Manual\n7. Options\n8. Save\n9. Exit\nEnter: ";
         choice = Game::choice(allActions, print, allActions.size());
+
+        // Tracks current states for automateUpdate.
+        vector<vector<string>> allFlags = {{"Can Move", "Can Not Move"}, {"Can Look", "Can Not Look"}, {"Is Able", "Is Not Able"}};
+        vector<bool> charaFlags = {zero.getMoveFlag(), zero.getLookFlag(), zero.getAbleFlag()};
+        json allStates;
+        vector<string> flags;
+        for (int i = 0; i < charaFlags.size(); i++) {
+            (charaFlags[i]) ? flags.push_back(allFlags[i][0]) : flags.push_back(allFlags[i][1]);
+        }
+        allStates["Flags"] = flags;
+        allStates["Locations"] = *zero.getLocation() + ": " + *zero.getPoint();
+
+        string tag;
         switch (choice) {
         case 0: // Move
             actions = Game::moving(xyz, zero, actions);
-            if (actions["Active"]) actions = Game::actions(xyz, zero, actions);
+            if (actions["Active"]) {
+                tag = actions[zero.getName()]["Move"]["tag"];
+                Game::automateUpdate(characters, zero, allStates, tag);
+                actions = Game::actions(xyz, characters, actions);
+            }
             break;
-        case 1: // Look (Add items, characters)
+        case 1: // Look
             actions = zero.look(xyz, actions);
-            if (actions["Active"]) actions = Game::actions(xyz, zero, actions);
+            if (actions["Active"]) {
+                Game::automateUpdate(characters, zero, allStates, "Look");
+                actions = Game::actions(xyz, characters, actions);
+            }
             break;
         case 2: // Interact
             actions = Game::interact(xyz, zero, actions);
-            if (actions["Active"]) actions = Game::actions(xyz, zero, actions);
+            if (actions["Active"]) {
+                tag = actions[zero.getName()]["Interact"]["tag"];
+                Game::automateUpdate(characters, zero, allStates, tag);
+                actions = Game::actions(xyz, characters, actions);
+            } else if (actions["Passive"]) {
+                tag = actions[zero.getName()]["Interact"]["tag"];
+                Game::automateUpdate(characters, zero, allStates, tag);
+            }
             break;
         case 3: // Wait
             actions = Game::waiting(zero, actions);
-            if (actions["Active"]) actions = Game::actions(xyz, zero, actions);
+            if (actions["Active"]) {
+                tag = actions[zero.getName()]["Wait"]["tag"];
+                Game::automateUpdate(characters, zero, allStates, tag);
+                actions = Game::actions(xyz, characters, actions);
+            }
             break;
         case 4: // Printing
             actions = Game::printing(zero, actions);
+            if (actions["Passive"]) {
+                actions["Passive"] = false;
+                tag = actions[zero.getName()]["Print"]["tag"];
+                Game::automateUpdate(characters, zero, allStates, tag);
+            }
             break;
-        case 5: // Automate (Need to do)
-            Game::automate();
+        case 5: // Automate
+            Game::automate(zero);
             break;
         case 6: // Manual
             Game::manual();
@@ -725,20 +1120,14 @@ void Game::singlePlayer(json file) {
 void Game::newGame() {
     json file;
     vector<string> allCharacters;
-    string print;
+    string print = "\n";
 
-    ifstream ifsc(".json/characters.json");
-    json characters = json::parse(ifsc);
-    ifsc.close();
-    ifstream ifsi(".json/items.json");
-    json items = json::parse(ifsi);
-    ifsi.close();
+    json characters = jsonLoad("characters");
+    json items = jsonLoad("items");
 
     // Items handler
     items["Location"] = items["Spawn"];
-    ofstream ofsi(".json/items.json");
-    ofsi << items;
-    ofsi.close();
+    jsonSave(items, "items");
 
     int count = 0;
     for (auto i: characters.items()) {
@@ -755,7 +1144,7 @@ void Game::newGame() {
     print += to_string(count) + ". Start\n";
     print += to_string(++count) + ". Cancel\nEnter: ";
 
-    // Will need to drop this into an Itr, along with another function.
+    // This needs to be fixed now.
     while (true) {
         int choice = Game::choice(allCharacters, print, count);
         if (choice < count - 1) { // Character Select
@@ -772,29 +1161,23 @@ void Game::newGame() {
 }
 
 void Game::resumeGame() {
-    ifstream ifss(".json/save.json");
-    json save = json::parse(ifss);
-    ifss.close();
-    ifstream ifsi(".json/items.json");
-    json items = json::parse(ifsi);
-    ifsi.close();
+    json save = jsonLoad("save");
+    json items = jsonLoad("items");
 
     // Game Handler
     *time = save["time"];
     autosave = save["autosave"];
+    *guiFlag = save["gui"];
 
     // Item Handler
     items["Location"] = save["items"];
-    ofstream ofsi(".json/items.json");
-    ofsi << items;
-    ofsi.close();
+    jsonSave(items, "items");
 
     Game::singlePlayer(save);
 }
 
 void Game::singleplayerSelection() {
-    ifstream saveIfs(".json/save.json");
-    json save = json::parse(saveIfs);
+    json save = jsonLoad("save");
     vector<string> allChoices = { "new", "resume", "cancel" };
     string print = "\n0. New\n1. Resume\n2. Cancel\nEnter: ";
 
@@ -805,7 +1188,7 @@ void Game::singleplayerSelection() {
             if (*exit) return;
             break;
         case 1: // Resume
-            if (!save["file"]) {
+            if (!save["file"] || !save.contains("file")) {
                 cout << "No save file found!\n\n";
                 break;
             } else {
@@ -843,6 +1226,7 @@ void Game::menu() {
             break;
         case 4: // Exit
             *exit = true;
+            if (*guiFlag) threadGUI->detach();
             return;
         }
     }
@@ -850,7 +1234,9 @@ void Game::menu() {
 
 // TO DO: 
 // Add all rooms
-// Add all items and functionality (including visibility using objects for hiding)
-// Add Characters and their logic with automate().
+// Add all items and functionality (including visibility using objects for hiding, and lethal objects).
+// Make sure Characters are automated.
+// Make sure Characters can pick a next Move if the exact parameter doesn't exist (i.e. "Move: Start 0: A..." for a character in an unvisited room.)
+// Remove decap/cap.
 // Update GUI.
 // Add Audio (Wwise?)

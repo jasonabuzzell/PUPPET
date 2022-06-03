@@ -70,14 +70,27 @@ int convertStrInt(string s) {
     }
 }
 
+string floatString(float f) {
+    f = round(f * 100) / 100;
+    string iStr, print;
+    string fStr = to_string(f);
+    int count = 0;
+    for (auto c: fStr) {
+        if (c == '.') break;
+        iStr += fStr[count++];         
+    }
+    print = iStr + "." + fStr.substr(++count, 2);
+    return print;
+}
+
 Strint printJson(json dict) {
     string print;
     int count = 0;
     print += "\n";
     for (auto i: dict.items()) {
         print += to_string(count) + ". " + i.key();
-        if (i.value().is_number() || i.value().is_string()) 
-            print += ": " + to_string(i.value());
+        if (i.value().is_number_float()) print += ": " + floatString(i.value());
+        else if (!i.value().is_object()) print += ": " + to_string(i.value());
         print += "\n";
         count++;
     }
@@ -173,4 +186,41 @@ string upper(string s) {
         up += toupper(c);
     }
     return up;
+}
+
+json jsonLoad(string name) {
+    ifstream ifs(".json/" + name + ".json");
+    json dict = json::parse(ifs);
+    ifs.close();
+    return dict;
+}
+
+void jsonSave(json dict, string name) {
+    ofstream ofs(".json/" + name + ".json");
+    ofs << dict;
+    ofs.close();   
+    return;
+}
+
+vector<string> splitString(string s, string del) {
+    vector<string> v;
+    s += del;
+    int start = 0;
+    for (int i = 0; i < s.length(); i++) {
+        if (s.substr(i, del.length()) == del) {
+            v.push_back(s.substr(start, i-start));
+            i += del.length();
+            start = i;
+        }
+    }
+    return v;
+}
+
+// For space seperated values
+vector<float> strVecFloat(vector<string> vStr) {
+    vector<float> vFloat;
+    for (auto s: vStr) {
+        vFloat.push_back(stof(s));
+    }
+    return vFloat;
 }

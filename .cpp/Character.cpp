@@ -14,16 +14,18 @@ using namespace nlohmann;
 // CHARACTER
 // ---------------------------------------------------------
 
-Character::Character(XYZ xyz, string title, string place, string part)
+Character::Character(XYZ xyz, string title, string place, string part, bool use)
     : location(new string(place)),
       point(new string(part)),
       name(title),
+      user(use),
       x(new float(0.0)),
       y(new float(0.0)),
       z(new float(0.0)),
       moveFlag(true),
       lookFlag(true),
-      ableFlag(true) {
+      ableFlag(true) 
+{
     vector<int> coords = xyz.listRooms()[*location][*point]["coords"];
     *x = coords[0];
     *y = coords[1];
@@ -32,6 +34,10 @@ Character::Character(XYZ xyz, string title, string place, string part)
 
 string Character::getName() {
     return name;
+}
+
+bool Character::getUser() {
+    return user;
 }
 
 void Character::setParameters(vector<string> position, vector<float> coords, vector<bool> flags) {
@@ -102,11 +108,16 @@ void Character::printActions(XYZ xyz, vector<string> actions) {
     cout << "Enter: ";
 }
 
+int Character::distance(vector<float> a, vector<float> b) {
+    int hypo = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
+    int dist = round(sqrt(hypo + pow(b[2] - a[2], 2)));
+    return dist;
+}
+
 json Character::distanceTime(vector<float> a, vector<float> b) {
     json movement;
     // Very demanding equation, might want to consider alternatives.
-    int hypo = round(sqrt(pow(b[0] - a[0], 2) + pow(b[1] - a[1], 2)));
-    int dist = round(sqrt(hypo + pow(b[2] - a[2], 2)));
+    int dist = Character::distance(a, b);
     movement["Walking"] = dist; // like 1m/s.
     movement["Crouching"] = dist * 3;
     movement["Running"] = int(ceil(float(dist) / 3));
@@ -151,27 +162,29 @@ void Character::move(vector<float> curCoords, vector<float> expCoords, int curTi
 }
 
 json Character::look(XYZ xyz, json actions) {
-    actions[name]["Look"] = json({});
+    json look;
+    look = json({});
 
-    actions[name]["Look"]["Rooms"] = json({});
-    actions[name]["Look"]["Rooms"]["Time"] = 4;
+    look["Rooms"] = json({});
+    look["Rooms"]["Time"] = 4;
     json room = xyz.listRooms()[*location];
     json connect = room[*point]["connect"];
     for (auto room : connect.items()) {
-        actions[name]["Look"]["Rooms"][room.key()] = {};
+        look["Rooms"][room.key()] = {};
         for (auto part : room.value()) {
-            actions[name]["Look"]["Rooms"][room.key()].push_back(part);
+            look["Rooms"][room.key()].push_back(part);
         }
     }
 
-    actions[name]["Look"]["Room Items"] = json({});
-    actions[name]["Look"]["Room Items"]["Time"] = 3;
-    actions[name]["Look"]["Room Items"]["Items"] = xyz.getItems(*location);
+    look["Room Items"] = json({});
+    look["Room Items"]["Time"] = 3;
+    look["Room Items"]["Items"] = xyz.getItems(*location);
 
-    actions[name]["Look"]["Inventory Items"] = json({});
-    actions[name]["Look"]["Inventory Items"]["Time"] = 2;
-    actions[name]["Look"]["Inventory Items"]["Items"] = xyz.getItems(name);
-
+    look["Inventory Items"] = json({});
+    look["Inventory Items"]["Time"] = 2;
+    look["Inventory Items"]["Items"] = xyz.getItems(name);
+    
+    actions[name]["Look"] = look;
     actions["Active"] = true;
     return actions;
 }
