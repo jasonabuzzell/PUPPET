@@ -29,6 +29,8 @@ class Game
         Strint printingInner(nlohmann::json catalog);
         nlohmann::json printing(Character chara, nlohmann::json actions);
 
+        nlohmann::json automateCompareCoords(XYZ xyz, Character chara, nlohmann::json rooms, std::vector<std::string> points, std::string room);
+        nlohmann::json automateActionsMove(XYZ xyz, Character chara, std::vector<std::string> parts, nlohmann::json actions);
         nlohmann::json automateActions(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
         void automateUpdate(std::vector<Character> charas, Character chara, nlohmann::json allStates, std::string parameter);
         nlohmann::json automateEnable(nlohmann::json dict);

@@ -170,7 +170,7 @@ json Game::moving(XYZ xyz, Character chara, json actions) {
                 }
                 coordsStr.pop_back();
 
-                actions[chara.getName()]["Move"]["tag"] = "Move: " + room + ": " + point + ": " + coordsStr + ": " + to_string(expTime);
+                actions[chara.getName()]["Move"]["tag"] = "Move: " + room + ": " + point + ": " + coordsStr + ": " + movement;
                 return actions; 
             }
         }
@@ -370,6 +370,94 @@ json Game::printing(Character chara, json actions) {
 // AUTOMATE
 // ----------------------------------------------------------------
 
+json Game::automateCompareCoords(XYZ xyz, Character chara, json rooms, vector<string> points, string room) {
+    vector<float> newCoords;
+    string newPoint;  
+    int best = -1;          
+    for (string point: points) {
+        vector<float> coords = rooms[room][point]["coords"];
+        int dist = chara.distance(chara.getCoords(), coords);
+        if (best > dist || best == -1) {
+            best = dist;
+            newCoords = coords;
+            newPoint = point; 
+        }
+    }
+    json compare;
+    compare["best"] = best;
+    compare["newPoint"] = newPoint;
+    compare["newCoords"] = newCoords;
+
+    return compare;
+}
+
+// Accounts for NPCs in unknown rooms making decisions without randomization. This works because if the character can move, then they will always have the possibility of moving.
+json Game::automateActionsMove(XYZ xyz, Character chara, vector<string> parts, json actions) {
+    string trueLocation, truePoint;
+    vector<float> trueCoords;
+    int trueTime;
+
+    string loc = *chara.getLocation();
+    string poi = *chara.getPoint();
+    json rooms = xyz.listRooms();
+    json connect = rooms[loc][poi]["connect"];
+    vector<string> points = connect[parts[1]];
+
+    vector<float> expCoords = strVecFloat(splitString(parts[3], " "));
+    if (chara.getCoords() != expCoords) {
+
+        if (!connect.contains(parts[1])) { // Unable to reach room.
+            vector<float> newCoords;
+            string newPoint;  
+            int best = -1;
+            for (auto i: connect.items()) {
+                string room = i.key();
+                json compare = Game::automateCompareCoords(xyz, chara, rooms, connect[room], room);
+                if (best > compare["best"] || best == -1) {
+                    best = compare["best"];
+                    trueCoords = {};
+                    for (auto f: compare["newCoords"]) {
+                        trueCoords.push_back(f);
+                    }
+                    truePoint = compare["newPoint"];
+                    trueLocation = room;
+                }
+            }
+            trueTime = chara.distanceTime(chara.getCoords(), trueCoords)[parts[4]];
+
+        } else if (find(points.begin(), points.end(), parts[2]) == points.end()) { // Unable to reach point.
+            json compare = Game::automateCompareCoords(xyz, chara, rooms, connect[parts[1]], parts[1]);
+            
+            trueLocation = parts[1];
+            truePoint = compare["newPoint"];
+            for (auto f: compare["newCoords"]) {
+                trueCoords.push_back(f);
+            }
+            trueTime = chara.distanceTime(chara.getCoords(), trueCoords)[parts[4]];
+
+        } else { // Able to reach point.
+            trueLocation = parts[1];
+            truePoint = parts[2];
+            trueCoords = expCoords;
+            trueTime = chara.distanceTime(chara.getCoords(), trueCoords)[parts[4]];
+        }
+        json move;
+
+        move["Location"] = trueLocation;
+        move["Point"] = truePoint;
+        move["Current Coords"] = chara.getCoords();
+        move["Current Time"] = 0;
+        move["Expected Coords"] = trueCoords;
+        move["Expected Time"] = trueTime;
+
+        actions[chara.getName()]["Move"] = move;
+        actions["Active"] = true;
+        actions["Pass"] = true;
+    }
+
+    return actions;
+}
+
 json Game::automateActions(XYZ xyz, vector<Character> charas, Character chara, json actions) {
     json weights;
     weights["Total"] = 0;
@@ -432,65 +520,62 @@ json Game::automateActions(XYZ xyz, vector<Character> charas, Character chara, j
     float random = float(rand()) / RAND_MAX;
     vector<string> moves = {"Move", "Look", "Interact", "Wait", "Print"};
     
-    for (auto i: clean.items()) {
-        float prob = i.value();
-        if (random <= prob) {
-            string action = i.key();
-            vector<string> parts = splitString(action, ": ");
-            auto itr = find(moves.begin(), moves.end(), parts[0]);
-            switch (distance(moves.begin(), itr)) {
-                case 0: // Move
-                    if (chara.getMoveFlag()) {
-                        json move;
-                        move["Location"] = parts[1];
-                        move["Point"] = parts[2];
-                        move["Current Coords"] = chara.getCoords();
-                        move["Current Time"] = 0;
-                        move["Expected Coords"] = strVecFloat(splitString(parts[3], " "));
-                        move["Expected Time"] = stoi(parts[4]);
-                        actions[chara.getName()]["Move"] = move;
-                        actions["Active"] = true;
-
-                        return actions;
-                    }
-                    break;
-                case 1: // Look
-                    if (chara.getLookFlag()) {
-                        actions = chara.look(xyz, actions);
-                        return actions;
-                    }
-                    break;
-                case 2: // Interact
-                    if (chara.getAbleFlag()) {
-                        if (parts[1] == "Take") {
-                            json move, interact;
-                            interact["Type"] = parts[1];
-                            interact["Item Name"] = parts[2];
-
-                            move["Location"] = *chara.getLocation();
-                            move["Point"] = parts[3];
-                            move["Current Coords"] = chara.getCoords();
-                            move["Current Time"] = 0;
-                            move["Expected Coords"] = strVecFloat(splitString(parts[4], " "));
-                            move["Expected Time"] = stoi(parts[5]);
-
-                            actions["Active"] = true;
-                            actions[chara.getName()]["Move"] = move;
-                            actions[chara.getName()]["Interact"] = interact;
+    while (true) { 
+        for (auto i: clean.items()) {
+            float prob = i.value();
+            if (random <= prob) {
+                string action = i.key();
+                vector<string> parts = splitString(action, ": ");
+                auto itr = find(moves.begin(), moves.end(), parts[0]);
+                switch (distance(moves.begin(), itr)) {
+                    case 0: // Move
+                        if (chara.getMoveFlag()) {
+                            actions["Pass"] = false;
+                            actions = Game::automateActionsMove(xyz, chara, parts, actions);
+                            if (actions["Pass"]) return actions;
                         }
+                        break;
+                    case 1: // Look
+                        if (chara.getLookFlag()) {
+                            actions = chara.look(xyz, actions);
+                            return actions;
+                        }
+                        break;
+                    case 2: // Interact
+                        if (chara.getAbleFlag()) {
+                            if (parts[1] == "Take") {
+                                json move, interact;
+                                vector<float> expCoords = strVecFloat(splitString(parts[4], " "));
+                                json movement = chara.distanceTime(chara.getCoords(), expCoords);
+
+                                interact["Type"] = parts[1];
+                                interact["Item Name"] = parts[2];
+
+                                move["Location"] = *chara.getLocation();
+                                move["Point"] = parts[3];
+                                move["Current Coords"] = chara.getCoords();
+                                move["Current Time"] = 0;
+                                move["Expected Coords"] = expCoords;
+                                move["Expected Time"] = movement[parts[5]];
+
+                                actions["Active"] = true;
+                                actions[chara.getName()]["Move"] = move;
+                                actions[chara.getName()]["Interact"] = interact;
+                            }
+                            return actions;
+                        }
+                    case 3: // Wait
+                        actions[chara.getName()]["Wait"] = parts[1];
                         return actions;
-                    }
-                case 3: // Wait
-                    actions[chara.getName()]["Wait"] = parts[1];
-                    return actions;
-                case 4: // Print
-                    json print;
-                    print["Item Name"] = parts[1];
-                    print["Time"] = parts[2];
-                    print["Room"] = parts[3];
-            }
-        } 
-        random -= prob;
+                    case 4: // Print
+                        json print;
+                        print["Item Name"] = parts[1];
+                        print["Time"] = parts[2];
+                        print["Room"] = parts[3];
+                }
+            } 
+            random -= prob;
+        }
     }
 
     return actions;
@@ -864,7 +949,6 @@ void Game::save(XYZ xyz, vector<Character> characters) {
         save["characters"][character.getName()] = charFile;
     }
 
-    save["file"] = true;
     json items = jsonLoad("items")["Location"];
     save["items"] = items;
     jsonSave(save, "save");
@@ -1188,7 +1272,7 @@ void Game::singleplayerSelection() {
             if (*exit) return;
             break;
         case 1: // Resume
-            if (!save["file"] || !save.contains("file")) {
+            if (save == json({})) {
                 cout << "No save file found!\n\n";
                 break;
             } else {
@@ -1236,7 +1320,6 @@ void Game::menu() {
 // Add all rooms
 // Add all items and functionality (including visibility using objects for hiding, and lethal objects).
 // Make sure Characters are automated.
-// Make sure Characters can pick a next Move if the exact parameter doesn't exist (i.e. "Move: Start 0: A..." for a character in an unvisited room.)
 // Remove decap/cap.
 // Update GUI.
 // Add Audio (Wwise?)

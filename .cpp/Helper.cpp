@@ -70,7 +70,7 @@ int convertStrInt(string s) {
     }
 }
 
-string floatString(float f) {
+string floatString(float f, int precision) {
     f = round(f * 100) / 100;
     string iStr, print;
     string fStr = to_string(f);
@@ -79,7 +79,12 @@ string floatString(float f) {
         if (c == '.') break;
         iStr += fStr[count++];         
     }
-    print = iStr + "." + fStr.substr(++count, 2);
+    string floats = fStr.substr(++count, precision);
+    for (int i = floats.size()-1; i >= 0; i--) {
+        if (floats[i] == '0') floats.pop_back();
+    }
+    if (floats.empty()) print = iStr;
+    else print = iStr + "." + floats;
     return print;
 }
 
@@ -89,7 +94,7 @@ Strint printJson(json dict) {
     print += "\n";
     for (auto i: dict.items()) {
         print += to_string(count) + ". " + i.key();
-        if (i.value().is_number_float()) print += ": " + floatString(i.value());
+        if (i.value().is_number_float()) print += ": " + floatString(i.value(), 2);
         else if (!i.value().is_object()) print += ": " + to_string(i.value());
         print += "\n";
         count++;
@@ -224,3 +229,4 @@ vector<float> strVecFloat(vector<string> vStr) {
     }
     return vFloat;
 }
+

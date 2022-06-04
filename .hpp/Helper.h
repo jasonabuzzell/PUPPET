@@ -23,7 +23,7 @@ std::string cap(std::string s);
 std::string decap(std::string s);
 int enumConvert(std::string s, std::vector<std::string> vec);
 int convertStrInt(std::string s);
-std::string floatString(float f);
+std::string floatString(float f, int precision);
 Strint printJson(nlohmann::json dict);
 std::string printJsonRepeat(nlohmann::json dict, std::string *print, int itr);
 Strint printJsonAll(nlohmann::json dict);
