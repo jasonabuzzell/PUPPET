@@ -26,7 +26,7 @@ Character::Character(XYZ xyz, string title, string place, string part, bool use)
       lookFlag(true),
       ableFlag(true) 
 {
-    vector<int> coords = xyz.listRooms()[*location][*point]["coords"];
+    vector<int> coords = xyz.listRooms()[*location][*point]["Coords"];
     *x = coords[0];
     *y = coords[1];
     *z = coords[2];
@@ -127,12 +127,12 @@ json Character::distanceTime(vector<float> a, vector<float> b) {
 json Character::possibleMoves(XYZ xyz) {
     json moves;
     json rooms = xyz.listRooms();
-    vector<float> a = rooms[*location][*point]["coords"];
-    json connected = rooms[*location][*point]["connect"];
+    vector<float> a = rooms[*location][*point]["Coords"];
+    json connected = rooms[*location][*point]["Connect"];
     for (auto room : connected.items()) {
         moves[room.key()] = {};
         for (auto point : room.value()) {
-            vector<float> b = rooms[room.key()][point]["coords"];
+            vector<float> b = rooms[room.key()][point]["Coords"];
             moves[room.key()][point] = {};
             json movement = Character::distanceTime(a, b);
             moves[room.key()][point]["Walking"] = movement["Walking"];
@@ -152,23 +152,27 @@ void Character::printMoves(XYZ xyz, vector<string> moves) {
 }
 
 void Character::move(vector<float> curCoords, vector<float> expCoords, int curTime, int expTime) {
-    vector<float *> coords = {x, y, z};
+    vector<float*> coords = {x, y, z};
     float percentage = curTime / float(expTime);
     for (int i = 0; i < coords.size(); i++) {
         *coords[i] = (expCoords[i] - curCoords[i]) * percentage + curCoords[i];
     }
-    cout << "  Current Location: X: " << setprecision(2) << *x << ", Y: "
-         << *y << ", Z: " << *z << "\n";
+    cout << "X: " << setprecision(2) << *x << ", Y: "
+         << *y << ", Z: " << *z << "...";
 }
 
+// This may not actually work because things/characters could leave the room while the character is looking and setting up the look json object.
 json Character::look(XYZ xyz, json actions) {
     json look;
     look = json({});
 
+    look["Characters"] = json({});
+    look["Characters"]["Time"] = 2;
+
     look["Rooms"] = json({});
     look["Rooms"]["Time"] = 4;
     json room = xyz.listRooms()[*location];
-    json connect = room[*point]["connect"];
+    json connect = room[*point]["Connect"];
     for (auto room : connect.items()) {
         look["Rooms"][room.key()] = {};
         for (auto part : room.value()) {
@@ -186,5 +190,27 @@ json Character::look(XYZ xyz, json actions) {
     
     actions[name]["Look"] = look;
     actions["Active"] = true;
+    
     return actions;
+}
+
+json Character::compareCoords(XYZ xyz, json rooms, vector<string> points, string room, string part) {
+    vector<float> newCoords;
+    string newPoint;  
+    int best = -1;          
+    for (string point: points) {
+        vector<float> coords = rooms[room][point]["Coords"];
+        int dist = Character::distance(rooms[room][part]["Coords"], coords);
+        if (best > dist || best == -1) {
+            best = dist;
+            newCoords = coords;
+            newPoint = point; 
+        }
+    }
+    json compare;
+    compare["Best"] = best;
+    compare["New Point"] = newPoint;
+    compare["New Coords"] = newCoords;
+
+    return compare;
 }

@@ -1,1 +1,33 @@
-{}
+{
+    "Autosave": true,
+    "Characters": {
+        "0": {
+            "Can Look": true,
+            "Can Move": true,
+            "Is Able": true,
+            "Location": "Start 0",
+            "Name": "0",
+            "Point": "B",
+            "X": 0.0,
+            "Y": 7.0,
+            "Z": 0.0
+        },
+        "1": {
+            "Can Look": true,
+            "Can Move": true,
+            "Is Able": true,
+            "Location": "Start 1",
+            "Name": "1",
+            "Point": "B",
+            "X": 20.0,
+            "Y": 86.0,
+            "Z": 0.0
+        }
+    },
+    "GUI": false,
+    "Items": null,
+    "Time": 8,
+    "XYZ": {
+        "Config": 0
+    }
+}

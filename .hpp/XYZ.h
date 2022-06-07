@@ -14,7 +14,7 @@ class XYZ
         void setConfig(int state);
         nlohmann::json listRooms();
         void removeItem(std::string room, std::string item);
-        std::vector<std::string> getItems(std::string location);
+        nlohmann::json getItems(std::string location);
     private:
         int config;
 };

@@ -34,6 +34,7 @@ class Character
         nlohmann::json possibleMoves(XYZ xyz);
         void printMoves(XYZ xyz, std::vector<std::string> moves);
         void move(std::vector<float> curCoords, std::vector<float> expCoords, int curTime, int expTime);
+        nlohmann::json compareCoords(XYZ xyz, nlohmann::json rooms, std::vector<std::string> points, std::string room, std::string part);
 
     private:
         std::string name;

@@ -1,3 +1,5 @@
+#include "../.hpp/XYZ.h"
+#include "../.hpp/Character.h"
 #include "../.hpp/Helper.h"
 #include "../.hpp/json.hpp"
 #include <string>
@@ -50,12 +52,15 @@ string decap(string s) {
 }
 
 int enumConvert(string s, vector<string> vec) {
-    auto itr = find(vec.begin(), vec.end(), s);
-    if (itr == vec.end()) {
-        return -2;
-    } else {
-        return distance(vec.begin(), itr);
+    for (int i = 0; i < vec.size(); i++) {
+        if (s.length() == vec[i].length()) {
+            for (int j = 0; j < s.length(); j++) {
+                if (toupper(s[j]) != vec[i][j] && tolower(s[j]) != vec[i][j]) break;
+                else if (j == s.length() - 1) return i;
+            }
+        }
     }
+    return -2;
 }
 
 int convertStrInt(string s) {
@@ -121,8 +126,11 @@ string printJsonRepeat(json dict, string print, int itr) {
 }
 
 Strint printJsonAll(json dict) {
+    Strint strint("", -1);
     string print;
     int count = 0;
+
+    if (dict == json({})) return strint;
     for (auto i: dict.items()) {
         print += "\n" + to_string(count++) + ". " + i.key() + ":";
         if (i.value().is_number()) {
@@ -132,7 +140,8 @@ Strint printJsonAll(json dict) {
         }
     }
     print += "\n" + to_string(count) + ". Cancel\nEnter: ";
-    Strint strint(print, count);
+    strint.setStr(print);
+    strint.setInt(count);
     return strint;
 }
 
@@ -153,6 +162,7 @@ vector<float> vecIntToFloat(vector<int> vecInt) {
 string listPrint(json dict) {
     string print;
 
+    if (dict == json({})) return print;
     for (int i = 0; i < dict.size(); i++) {
         print += dict[i];
         if (i != dict.size() - 1) print += ", ";
@@ -163,7 +173,9 @@ string listPrint(json dict) {
 }
 
 string jsonListPrint(json dict) {
-    string print = "";
+    string print;
+
+    if (dict == json({})) return print;
     for (auto i: dict.items()) {
         print += "    " + i.key() + ": " + listPrint(dict[i.key()]);
     }
@@ -230,3 +242,9 @@ vector<float> strVecFloat(vector<string> vStr) {
     return vFloat;
 }
 
+string lowercase(string s) {
+    for (int i = 0; i < s.length(); i++) {
+        s[i] = tolower(s[i]);
+    }
+    return s;
+}

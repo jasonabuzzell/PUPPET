@@ -19,28 +19,13 @@ public:
     void setPerson(bool take);
     void add(std::string newRoom, std::string newPoint);
     void update(std::string oldRoom, std::string newRoom, std::string newPoint, bool take);
-    void selector();
+    nlohmann::json use(nlohmann::json actions);
 
 private:
     std::string point;
     std::vector<float> coords;
     std::string name;
     bool onPerson;
-};
-
-class Phone {
-public:
-    Phone();
-    void use();
-private:
-};
-
-class Weapon {
-public:
-    Weapon(std::string weaponName);
-    void attack();
-private:
-    std::string name;
 };
 
 #endif

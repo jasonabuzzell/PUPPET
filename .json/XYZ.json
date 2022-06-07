@@ -2,52 +2,49 @@
     "0": {
         "Start 0": {
             "A": {
-                "coords": [0.0, 0.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 0.0, 0.0],
+                "Connect": {
                     "Start 0": ["B", "C", "D"]
-                },
-                "visible": 1
+                }
             },
             "B": {
-                "coords": [0.0, 7.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 7.0, 0.0],
+                "Connect": {
                     "Start 0": ["A", "C", "D"],
                     "Room 1": ["A"]
-                },
-                "visible": 1.0
+                }
             }, 
             "C": {
-                "coords": [1.0, 3.0, 0.0],
-                "connect": {
+                "Coords": [1.0, 3.0, 0.0],
+                "Connect": {
                     "Start 0": ["A", "B", "D"]
-                },
-                "visible": 0.7
+                }
             },
             "D": {
-                "coords": [-3.0, 4.0, 0.0],
-                "connect": {
-                    "Start 0": ["A", "B", "C"]
-                },
-                "visible": 0.5
+                "Coords": [-3.0, 4.0, 0.0],
+                "Connect": {
+                    "Start 0": ["A", "B", "C"],
+                    "Start 1": ["B"]
+                }
             }
         },
         "Room 1": {
             "A": {
-                "coords": [0.0, 8.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 8.0, 0.0],
+                "Connect": {
                     "Start 0": ["B"],
                     "Room 1": ["B", "C"]
                 }
             },
             "B": {
-                "coords": [0.0, 13.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 13.0, 0.0],
+                "Connect": {
                     "Room 1": ["A", "C"]
                 }
             },
             "C": {
-                "coords": [0.0, 17.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 17.0, 0.0],
+                "Connect": {
                     "Room 1": ["A", "B"],
                     "Passage 1": ["A"]
                 }
@@ -55,15 +52,15 @@
         },
         "Passage 1": {
             "A": {
-                "coords": [0.0, 18.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 18.0, 0.0],
+                "Connect": {
                     "Room 1": ["C"],
                     "Passage 1": ["B"]
                 }
             },
             "B": {
-                "coords": [0.0, 38.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 38.0, 0.0],
+                "Connect": {
                     "Passage 1": ["A"],
                     "Lobby": ["A"]
                 }
@@ -71,35 +68,35 @@
         },
         "Lobby": {
             "A": {
-                "coords": [0.0, 41.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 41.0, 0.0],
+                "Connect": {
                     "Passage 1": ["B"],
                     "Lobby": ["B", "C", "D", "E"]
                 }
             },
             "B": {
-                "coords": [7.0, 43.0, 0.0],
-                "connect": {
+                "Coords": [7.0, 43.0, 0.0],
+                "Connect": {
                     "Lobby": ["A", "C", "D", "E"],
                     "Passage 2": ["A"]
                 }
             },
             "C": {
-                "coords": [-7.0, 43.0, 0.0],
-                "connect": {
+                "Coords": [-7.0, 43.0, 0.0],
+                "Connect": {
                     "Lobby": ["A", "B", "D", "E"],
                     "Passage 3": ["A"]
                 }
             },
             "D": {
-                "coords": [0.0, 48.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 48.0, 0.0],
+                "Connect": {
                     "Lobby": ["A", "B", "C", "E"]
                 }
             },
             "E": {
-                "coords": [0.0, 52.0, 0.0],
-                "connect": {
+                "Coords": [0.0, 52.0, 0.0],
+                "Connect": {
                     "Lobby": ["A", "B", "C", "D"],
                     "Passage 6": ["A"]
                 }
@@ -107,21 +104,22 @@
         },
         "Start 1": {
             "A": {
-                "coords": [20.0, 80.0, 0.0],
-                "connect": {
+                "Coords": [20.0, 80.0, 0.0],
+                "Connect": {
                     "Start 1": ["B", "C"],
                     "Passage 9": ["B"]
                 }
             },
             "B": {
-                "coords": [20.0, 86.0, 0.0],
-                "connect": {
-                    "Start 1": ["A", "C"]
+                "Coords": [20.0, 86.0, 0.0],
+                "Connect": {
+                    "Start 1": ["A", "C"],
+                    "Start 0": ["D"]
                 }
             },
             "C": {
-                "coords": [25.0, 88.0, 0.0],
-                "connect": {
+                "Coords": [25.0, 88.0, 0.0],
+                "Connect": {
                     "Start 1": ["A", "B"],
                     "Staircase": ["A"]
                 }

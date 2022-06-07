@@ -32,20 +32,14 @@ json XYZ::listRooms() {
 void XYZ::removeItem(string room, string item) {
     fstream fs(".json/XYZ.json");
     json rooms = json::parse(fs);
-    json items = rooms[config][room]["items"];
+    json items = rooms[config][room]["Items"];
     items.erase(item);
     fs << rooms;
     fs.close();
 }
 
-vector<string> XYZ::getItems(string location) {
-    vector<string> keys;
+json XYZ::getItems(string location) {
     ifstream ifs(".json/items.json");
     json items = json::parse(ifs)["Location"][location];
-
-    for (auto i: items.items()) {
-        keys.push_back(i.key());
-    }
-
-    return keys;
+    return items;
 }

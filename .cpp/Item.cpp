@@ -24,7 +24,7 @@ string Item::getPoint() {
 
 vector<float> Item::getCoords(XYZ xyz, Character zero) {
     if (onPerson) return zero.getCoords();
-    else return xyz.listRooms()[*zero.getLocation()][point]["coords"].get<vector<float>>(); 
+    else return xyz.listRooms()[*zero.getLocation()][point]["Coords"].get<vector<float>>(); 
     // can only access if no one is carrying the item.
 }
 
@@ -63,17 +63,7 @@ void Item::update(string oldRoom, string newRoom, string newPoint, bool take) {
     ofs.close();
 }
 
-void Item::selector() {
-    if (name == "Phone") {
-        Phone phone;
-        phone.use();
-    }
-    // Add in other items (Also, weapons inherit from weapon class)
-    return;
-}
-
-Phone::Phone() {}
-
-void Phone::use() {
-    cout << "Beep boop, I'm a phone.\n";
+json Item::use(json actions) {
+    vector<string> allItems = {"Camera", "Chaff Grenade", "Phone", "Printer Carry", "Printer Pen", "Radar", "Sonar", "Exmit", "Ferroform", "Grenade", "Handgun", "Rifle", "Shotgun", "Spider Cage", "The Sinners", "The Thieves"};
+    return actions;
 }

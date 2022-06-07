@@ -37,5 +37,6 @@ nlohmann::json jsonLoad(std::string name);
 void jsonSave(nlohmann::json dict, std::string name);
 std::vector<std::string> splitString(std::string s, std::string del);
 std::vector<float> strVecFloat(std::vector<std::string> s);
+std::string lowercase(std::string s);
 
 #endif
