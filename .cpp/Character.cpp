@@ -158,10 +158,9 @@ void Character::move(vector<float> curCoords, vector<float> expCoords, int curTi
         *coords[i] = (expCoords[i] - curCoords[i]) * percentage + curCoords[i];
     }
     cout << "X: " << setprecision(2) << *x << ", Y: "
-         << *y << ", Z: " << *z << "...";
+         << *y << ", Z: " << *z << "...\n";
 }
 
-// This may not actually work because things/characters could leave the room while the character is looking and setting up the look json object.
 json Character::look(XYZ xyz, json actions) {
     json look;
     look = json({});
@@ -171,22 +170,12 @@ json Character::look(XYZ xyz, json actions) {
 
     look["Rooms"] = json({});
     look["Rooms"]["Time"] = 4;
-    json room = xyz.listRooms()[*location];
-    json connect = room[*point]["Connect"];
-    for (auto room : connect.items()) {
-        look["Rooms"][room.key()] = {};
-        for (auto part : room.value()) {
-            look["Rooms"][room.key()].push_back(part);
-        }
-    }
-
+    
     look["Room Items"] = json({});
     look["Room Items"]["Time"] = 3;
-    look["Room Items"]["Items"] = xyz.getItems(*location);
 
     look["Inventory Items"] = json({});
     look["Inventory Items"]["Time"] = 2;
-    look["Inventory Items"]["Items"] = xyz.getItems(name);
     
     actions[name]["Look"] = look;
     actions["Active"] = true;

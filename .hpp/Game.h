@@ -29,10 +29,10 @@ class Game
         Strint printingInner(nlohmann::json catalog);
         nlohmann::json printing(Character chara, nlohmann::json actions);
 
-        nlohmann::json automateCompareCoords(XYZ xyz, Character chara, nlohmann::json rooms, std::vector<std::string> points, std::string room);
         nlohmann::json automateActionsMove(XYZ xyz, Character chara, std::vector<std::string> parts, nlohmann::json actions);
+        nlohmann::json automateActionsInteract(XYZ xyz, Character chara, std::vector<std::string> parts, nlohmann::json actions);
         nlohmann::json automateActions(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
-        void automateUpdate(std::vector<Character> charas, Character chara, nlohmann::json allStates, std::string parameter);
+        void automateUpdate(std::vector<Character> charas, Character chara, std::string parameter);
         nlohmann::json automateEnable(nlohmann::json dict);
         void automate(Character chara);
 
@@ -46,6 +46,11 @@ class Game
 
         void save(XYZ xyz, std::vector<Character> characters);
 
+        nlohmann::json actionsMove(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
+        nlohmann::json actionsLook(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
+        nlohmann::json actionsInteract(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
+        nlohmann::json actionsWait(XYZ xyz, std::vector<Character> charas, Character chara, int counter, nlohmann::json actions);
+        nlohmann::json actionsPrint(XYZ xyz, std::vector<Character> charas, Character chara, nlohmann::json actions);
         nlohmann::json actions(XYZ xyz, std::vector<Character> charas, nlohmann::json actions);
 
         void singlePlayer(nlohmann::json file);

@@ -14,7 +14,6 @@ class Item {
 public:
     Item(std::string roomName, std::string itemName, bool take);
     std::string getPoint();
-    std::vector<float> getCoords(XYZ xyz, Character zero);
     std::string getName();
     void setPerson(bool take);
     void add(std::string newRoom, std::string newPoint);

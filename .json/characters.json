@@ -1,1 +1,105 @@
-{"0":{"0":{"Auto":false,"Flags":{"Auto":false,"Can Look":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096},"Can Move":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096},"Is Able":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096}},"Locations":{"Auto":false,"Start 0: A":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096}}},"1":{"Auto":false,"Flags":{"Auto":false,"Can Look":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096},"Can Move":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096},"Is Able":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096}},"Locations":{"Auto":false,"Start 0: A":{"Auto":false,"Look":0.1428571492433548,"Move: Start 0: B: 0 7 0: Walking":0.2857142984867096,"Total":7,"Wait: 10":0.1428571492433548,"Wait: 4":0.1428571492433548,"Wait: 5":0.2857142984867096}}},"Auto":false}}
+{
+    "0": {
+        "0": {
+            "Auto": false,
+            "Flags": {
+                "Auto": false,
+                "Can Look": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                },
+                "Can Move": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                },
+                "Is Able": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                }
+            },
+            "Locations": {
+                "Auto": false,
+                "Start 0: A": {
+                    "Auto": false,
+                    "Interact: Take: Rifle": 0.25,
+                    "Look": 0.25,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.25,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.25,
+                    "Total": 4
+                },
+                "Start 0: B": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.25,
+                    "Look": 0.75,
+                    "Total": 4
+                },
+                "Start 0: D": {
+                    "Auto": false,
+                    "Move: Start 0: B: 0 7 0: Walking": 1.0,
+                    "Total": 1
+                }
+            }
+        },
+        "1": {
+            "Auto": false,
+            "Flags": {
+                "Auto": false,
+                "Can Look": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                },
+                "Can Move": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                },
+                "Is Able": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                }
+            },
+            "Locations": {
+                "Auto": false,
+                "Start 1: B": {
+                    "Auto": false,
+                    "Interact: Drop: Rifle": 0.1111111119389534,
+                    "Interact: Take: Rifle": 0.1111111119389534,
+                    "Look": 0.4444444477558136,
+                    "Move: Start 0: B: 0 7 0: Walking": 0.2222222238779068,
+                    "Move: Start 0: D: -3 4 0: Walking": 0.1111111119389534,
+                    "Total": 9
+                }
+            }
+        },
+        "Auto": false
+    }
+}

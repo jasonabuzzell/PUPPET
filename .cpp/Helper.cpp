@@ -163,9 +163,11 @@ string listPrint(json dict) {
     string print;
 
     if (dict == json({})) return print;
-    for (int i = 0; i < dict.size(); i++) {
-        print += dict[i];
-        if (i != dict.size() - 1) print += ", ";
+    int count = 0;
+    int size = dict.size();
+    for (auto i: dict.items()) {
+        print += i.key();
+        if (++count < size) print += ", ";
     }
     print += "\n";
 
@@ -247,4 +249,12 @@ string lowercase(string s) {
         s[i] = tolower(s[i]);
     }
     return s;
+}
+
+string onlyKey(json dict) {
+    for (auto i: dict.items()) {
+        return i.key();
+    }
+
+    return "";
 }
